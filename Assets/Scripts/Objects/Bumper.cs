@@ -46,6 +46,8 @@ public class Bumper : MonoBehaviour
 
             // 3. 외부 이벤트 호출 (사운드 재생, 점수 증가, 연계 효과 등)
             onBumperHit.Invoke();
+
+            UIManager.Instance.SpawnFlyingDamage(transform.position, 10f);
         }
     }
 

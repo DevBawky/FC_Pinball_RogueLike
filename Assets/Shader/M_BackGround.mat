@@ -41,13 +41,17 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _ColorBands: 20
     - _Contrast: 1
     - _EnableExternalAlpha: 0
     - _PatternStrength: 1
     - _Saturation: 1
-    - _Scale: 2
-    - _Speed: 1
+    - _Scale: 5.52
+    - _ScanlineStrength: 0.05
+    - _Speed: 0.73
     - _TimeOffset: 0
+    - _VignetteStrength: 0.95
+    - _WarpStrength: 0.5
     - _ZWrite: 0
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
