@@ -7,7 +7,6 @@ public class Bumper : MonoBehaviour
     [Header("Bumper Settings")]
     public float speedBoostMultiplier = 1.1f; 
     public float maxBallSpeed = 30f;          
-    public int baseDamage = 10;               
 
     [Header("Visual & Feedback")]
     public float scalePunchAmount = 1.2f;     
@@ -34,20 +33,27 @@ public class Bumper : MonoBehaviour
 
     void OnCollisionEnter2D(Collision2D collision)
     {
-        BallMovement ball = collision.gameObject.GetComponent<BallMovement>();
+        // 이제 BallMovement 대신 모든 정보를 쥐고 있는 BallController를 가져옵니다.
+        BallController ballCtrl = collision.gameObject.GetComponent<BallController>();
         
-        if (ball != null)
+        if (ballCtrl != null)
         {
             // 1. 타격감 (시각적 피드백)
             transform.localScale = originalScale * scalePunchAmount;
 
-            // 2. 로그라이크 기믹: 공의 속도를 증가시키거나 추가 로직 적용
-            IncreaseBallSpeed(ball);
+            // 2. 로그라이크 기믹: 공의 속도 증가
+            BallMovement movement = collision.gameObject.GetComponent<BallMovement>();
+            if (movement != null)
+            {
+                IncreaseBallSpeed(movement);
+            }
 
-            // 3. 외부 이벤트 호출 (사운드 재생, 점수 증가, 연계 효과 등)
+            // 3. 점수 파티클 날리기 (기존 SpawnFlyingDamage 대체)
+            // 공이 가진 속성(칩 or 배수)에 맞춰 해당 UI 패널로 파티클이 날아갑니다.
+            ballCtrl.OnHitObject(transform.position);
+
+            // 4. 외부 이벤트 호출 (사운드 재생 등)
             onBumperHit.Invoke();
-
-            UIManager.Instance.SpawnFlyingDamage(transform.position, 10f);
         }
     }
 
@@ -58,8 +64,6 @@ public class Bumper : MonoBehaviour
             ball.speed *= speedBoostMultiplier;
             ball.speed = Mathf.Min(ball.speed, maxBallSpeed);
 
-            // 중요: BallMovement에서 이미 충돌 처리를 하며 방향을 바꿨을 수 있으므로,
-            // 변경된 speed가 즉각 물리적으로 적용되도록 현재 방향을 유지한 채 속력만 갱신합니다.
             Rigidbody2D ballRb = ball.GetComponent<Rigidbody2D>();
             if (ballRb != null)
             {

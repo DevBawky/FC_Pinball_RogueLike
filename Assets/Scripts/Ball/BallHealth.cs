@@ -63,6 +63,12 @@ public class BallHealth : MonoBehaviour
         }
     }
 
+    public void ResetHealth()
+    {
+        currentHealth = maxHealth;
+        onHealthChanged.Invoke(currentHealth, maxHealth);
+    }
+
     // 힐링 범퍼나 특수 아이템을 먹었을 때 체력을 회복하는 기능
     public void Heal(int amount)
     {
@@ -76,8 +82,6 @@ public class BallHealth : MonoBehaviour
 
     private void Die()
     {
-        Debug.Log("공의 내구도가 다하여 파괴되었습니다!");
-
         // 파괴 이벤트 호출 (폭발 파티클 재생, 게임 오버/턴 종료 매니저 호출 등)
         onDeath.Invoke();
 

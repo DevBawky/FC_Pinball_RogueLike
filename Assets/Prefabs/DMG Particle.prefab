@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 440122184428698560}
   - component: {fileID: 8426506994215144909}
   - component: {fileID: 7840536119072023149}
-  - component: {fileID: 4778425207583816266}
+  - component: {fileID: 6235834206526100519}
   m_Layer: 5
   m_Name: DMG Particle
   m_TagString: Untagged
@@ -59,7 +59,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 0.3254717, b: 0.3254717, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -76,7 +76,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &4778425207583816266
+--- !u!114 &6235834206526100519
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -85,8 +85,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 261630699227536938}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 106df3eee23a8b342a0da599df24af15, type: 3}
+  m_Script: {fileID: 11500000, guid: b22dad1093a978a46a49ed9677def143, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 1500
-  arrivalDistance: 10
+  arrivalDistance: 20
+  waveFrequency: 15
+  waveAmplitude: 100
