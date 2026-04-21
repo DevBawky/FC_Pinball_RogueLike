@@ -6,35 +6,44 @@ public class BallLauncher : MonoBehaviour
     [Header("발사 설정")]
     public GameObject ballPrefab; 
     public float spawnDelay = 0.2f; 
+    
+    public LayerMask floorLayer; 
 
-    private bool isSpawning = false; 
+    private bool isSpawningRoutineActive = false; 
 
     void Update()
     {
-        if (Input.GetMouseButtonDown(0) && !isSpawning)
+        if (Input.GetMouseButtonDown(0) && !isSpawningRoutineActive)
         {
-            // 탄창이 비어있으면 쏘지 않도록 방어 (DeckManager 확인)
-            if (DeckManager.Instance != null && DeckManager.Instance.roundMagazine.Count == 0)
-            {
-                Debug.Log("장전된 공이 없습니다!");
-                return;
-            }
+            if (DeckManager.Instance == null || DeckManager.Instance.roundMagazine.Count == 0) return;
+            if (GameManager.Instance != null && GameManager.Instance.isCalculating) return;
 
             Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            mousePos.z = 0f; 
+            Vector2 mousePos2D = new Vector2(mousePos.x, mousePos.y);
 
-            if (GameManager.Instance != null)
+            Collider2D hitCollider = Physics2D.OverlapPoint(mousePos2D, floorLayer);
+
+            if (hitCollider != null)
             {
-                GameManager.Instance.OnFireStarted();
+                mousePos.z = 0f; 
+                StartCoroutine(SpawnBallsRoutine(mousePos));
             }
-
-            StartCoroutine(SpawnBallsRoutine(mousePos));
+            else
+            {
+                // 바닥이 아닌 곳(벽, 허공, UI 등)을 클릭했을 때의 처리 (디버그 로그)
+                Debug.Log("바닥(Floor) 영역을 클릭해야 발사할 수 있습니다!");
+            }
         }
     }
 
     private IEnumerator SpawnBallsRoutine(Vector3 spawnPosition)
     {
-        isSpawning = true;
+        isSpawningRoutineActive = true;
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnFireStarted();
+        }
 
         while (true)
         {
@@ -42,7 +51,7 @@ public class BallLauncher : MonoBehaviour
             
             if (nextBall == null)
             {
-                break; // 장전된 공을 다 쐈으면 루프 탈출
+                break; 
             }
 
             GameObject newBall = Instantiate(ballPrefab, spawnPosition, Quaternion.identity);
@@ -64,6 +73,6 @@ public class BallLauncher : MonoBehaviour
             GameManager.Instance.OnFireFinished();
         }
         
-        isSpawning = false;
+        isSpawningRoutineActive = false;
     }
 }

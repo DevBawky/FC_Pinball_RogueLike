@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -7,12 +8,24 @@ public class EnemyManager : MonoBehaviour
     public static EnemyManager Instance;
 
     [Header("Enemy Stats")]
-    public float maxHealth = 5000f; // 스테이지 보스의 체력
-    private float currentHealth;
+    public float maxHealth = 5000f;
+    private float currentHealth;        // 논리적인 실제 체력
+    private float displayHealth;        // UI에 보여주기 위해 서서히 줄어드는 가짜 체력
 
-    [Header("UI References")]
-    public Image healthBarFill;       // 체력바 (Filled 이미지)
-    public TextMeshProUGUI healthText; // "5000 / 5000" 표시용 텍스트
+    [Header("UI References (Health)")]
+    public Image healthBarFill;       
+    public TextMeshProUGUI healthText; 
+    public float healthLerpSpeed = 10f; // 체력바가 줄어드는 속도
+
+    [Header("UI References (Damage Text)")]
+    public TextMeshProUGUI accumulatedDamageText; // 적 머리 위에 띄울 누적 대미지 텍스트
+    public float damageTextPunchScale = 1.5f;     // 대미지 누적 시 커질 스케일 배수
+    public float damageTextResetTime = 1.5f;      // 타격이 끝난 후 텍스트가 사라지는 시간
+
+    private float currentAccumulatedDamage = 0f;
+    private Coroutine punchCoroutine;
+    private Coroutine hideDamageCoroutine;
+    private bool isDead = false;
 
     void Awake()
     {
@@ -22,41 +35,124 @@ public class EnemyManager : MonoBehaviour
     void Start()
     {
         currentHealth = maxHealth;
-        UpdateUI();
+        displayHealth = maxHealth;
+        
+        if (accumulatedDamageText != null)
+        {
+            accumulatedDamageText.gameObject.SetActive(false);
+        }
+
+        UpdateHealthUIInstantly();
     }
 
-    // ScoreManager에서 최종 대미지가 확정되면 이 함수를 호출합니다.
+    void Update()
+    {
+        // 보여지는 체력이 실제 체력과 다르다면 서서히(Lerp) 깎아줍니다.
+        if (Mathf.Abs(displayHealth - currentHealth) > 0.5f)
+        {
+            displayHealth = Mathf.Lerp(displayHealth, currentHealth, Time.deltaTime * healthLerpSpeed);
+            
+            // Lerp되는 동안 체력바와 텍스트를 실시간으로 업데이트
+            if (healthBarFill != null)
+                healthBarFill.fillAmount = displayHealth / maxHealth;
+                
+            if (healthText != null)
+                healthText.text = $"{Mathf.RoundToInt(displayHealth)} / {maxHealth}";
+        }
+    }
+
+    // 파티클이 도착할 때마다 이 함수가 호출됩니다.
     public void TakeDamage(float damage)
     {
-        currentHealth -= damage;
-        
-        // 체력이 0 이하로 떨어졌을 때 (승리)
-        if (currentHealth <= 0)
-        {
-            currentHealth = 0;
-            UpdateUI();
-            Die();
-            return;
-        }
+        if (isDead) return;
 
-        UpdateUI();
+        // 1. 실제 체력 감소 (UI는 Update에서 알아서 서서히 줄어듭니다)
+        currentHealth -= damage;
+        if (currentHealth <= 0) currentHealth = 0;
+
+        // 2. 누적 대미지 연산 및 표시
+        ShowAccumulatedDamage(damage);
+
+        // 3. 사망 판정
+        if (currentHealth <= 0 && !isDead)
+        {
+            isDead = true;
+            Die();
+        }
     }
 
-    private void UpdateUI()
+    private void ShowAccumulatedDamage(float damage)
     {
-        if (healthBarFill != null)
+        if (accumulatedDamageText == null) return;
+
+        // 대미지 누적
+        currentAccumulatedDamage += damage;
+        
+        // 텍스트 활성화
+        accumulatedDamageText.gameObject.SetActive(true);
+
+        // ★ 핵심 변경점: 적 체력이 0 이하가 되었다면 "DIE!" 출력
+        if (currentHealth <= 0)
         {
-            healthBarFill.fillAmount = currentHealth / maxHealth;
+            accumulatedDamageText.text = "DIE!";
+            
+            accumulatedDamageText.color = Color.red; 
         }
-        if (healthText != null)
+        else
         {
-            healthText.text = $"{Mathf.RoundToInt(currentHealth)} / {maxHealth}";
+            // 아직 살아있다면 정상적으로 누적 대미지 출력
+            accumulatedDamageText.text = $"-{Mathf.RoundToInt(currentAccumulatedDamage)}";
         }
+
+        if (punchCoroutine != null) StopCoroutine(punchCoroutine);
+        
+        // 막타일 때는 스케일을 조금 더 크게 줘도 맛있습니다.
+        float currentPunchScale = (currentHealth <= 0) ? damageTextPunchScale * 1.5f : damageTextPunchScale;
+        punchCoroutine = StartCoroutine(PunchScaleRoutine(currentPunchScale));
+
+        // 일정 시간 뒤에 텍스트를 숨기는 코루틴 실행
+        if (hideDamageCoroutine != null) StopCoroutine(hideDamageCoroutine);
+        hideDamageCoroutine = StartCoroutine(HideDamageTextRoutine());
+    }
+
+    private IEnumerator PunchScaleRoutine(float targetScale)
+    {
+        Transform textTransform = accumulatedDamageText.transform;
+        
+        // 확 커짐
+        textTransform.localScale = Vector3.one * targetScale;
+        
+        // 0.15초 동안 원래 크기(Vector3.one)로 부드럽게 복귀
+        float timer = 0f;
+        while (timer < 0.15f)
+        {
+            timer += Time.deltaTime;
+            textTransform.localScale = Vector3.Lerp(Vector3.one * targetScale, Vector3.one, timer / 0.15f);
+            yield return null;
+        }
+        
+        textTransform.localScale = Vector3.one;
+    }
+
+    // 파티클 공격이 모두 끝나고 나면 누적 대미지를 초기화하고 숨김
+    private IEnumerator HideDamageTextRoutine()
+    {
+        yield return new WaitForSeconds(damageTextResetTime);
+        
+        accumulatedDamageText.gameObject.SetActive(false);
+        currentAccumulatedDamage = 0f;
+    }
+
+    // 초기 시작 시 UI를 즉시 맞추기 위한 헬퍼 함수
+    private void UpdateHealthUIInstantly()
+    {
+        if (healthBarFill != null) healthBarFill.fillAmount = currentHealth / maxHealth;
+        if (healthText != null) healthText.text = $"{Mathf.RoundToInt(currentHealth)} / {maxHealth}";
     }
 
     private void Die()
     {
-        Debug.Log("적을 물리쳤습니다! 스테이지 클리어!");
-        // TODO: 보스 파괴 연출, 결과 화면 띄우기, 다음 스테이지로 이동 등
+        Debug.Log("현상금 수배범 처치 완료! 다음 스테이지로!");
+        // TODO: 보스 파괴 폭발 이펙트 등
     }
 }

@@ -23,6 +23,7 @@ public class ScoreManager : MonoBehaviour
     public float rollSpeed = 10f; // 숫자가 굴러가는 속도
 
     [SerializeField] HealthBarUI _enemyHP;
+    Coroutine textReduceCoroutine;
 
     void Awake()
     {
@@ -88,19 +89,19 @@ public class ScoreManager : MonoBehaviour
         return currentChips * currentMult;
     }
 
+    // ScoreManager.cs 내부의 코루틴 수정
+
     private IEnumerator CalculateFinalScoreRoutine()
     {
-        // 1. 모든 파티클 도착 후 0.5초 대기 (정적)
         yield return new WaitForSeconds(0.5f);
 
-        // 2. 최종 대미지 계산 및 화면 표시
         float totalDamage = currentChips * currentMult;
+        
         if (totalDamageText != null)
         {
             totalDamageText.gameObject.SetActive(true);
             totalDamageText.text = Mathf.RoundToInt(totalDamage).ToString();
             
-            // 연출: 텍스트 펀치 효과
             totalDamageText.transform.localScale = Vector3.one * 1.5f;
             float timer = 0f;
             while(timer < 0.2f)
@@ -111,20 +112,44 @@ public class ScoreManager : MonoBehaviour
             }
         }
 
+        // 잭팟 텍스트를 감상할 시간 0.5초 부여
         yield return new WaitForSeconds(0.5f);
 
-        if (EnemyManager.Instance != null)
+        if (DamageParticleManager.Instance != null)
         {
-            EnemyManager.Instance.TakeDamage(totalDamage);
+            DamageParticleManager.Instance.FireDamageParticles(totalDamage);
+        }
+
+    }
+
+    public void ReduceTotalDamageText(float startValue, float endValue, float duration)
+    {
+        // 이미 숫자가 줄어들고 있다면 멈추고 새로운 목표치로 갱신
+        if (textReduceCoroutine != null) StopCoroutine(textReduceCoroutine);
+        textReduceCoroutine = StartCoroutine(ReduceTextRoutine(startValue, endValue, duration));
+    }
+    
+    private IEnumerator ReduceTextRoutine(float start, float end, float duration)
+    {
+        float timer = 0f;
+        while (timer < duration)
+        {
+            timer += Time.deltaTime;
+            
+            // start에서 end로 지정된 시간(duration)동안 부드럽게 감소
+            float current = Mathf.Lerp(start, end, timer / duration);
+            
+            if (totalDamageText != null) 
+            {
+                totalDamageText.text = Mathf.RoundToInt(current).ToString();
+            }
+            yield return null;
         }
         
-        // 적이 대미지를 입고 반응할 시간(체력바 깎이는 연출 등)을 위해 살짝 대기
-        yield return new WaitForSeconds(0.5f);
-
-        // 5. 다음 라운드(턴) 장전 및 점수판 초기화
-        if (GameManager.Instance != null)
+        // 목표치에 완벽하게 도달하도록 보정
+        if (totalDamageText != null) 
         {
-            GameManager.Instance.StartNewTurn();
+            totalDamageText.text = Mathf.RoundToInt(end).ToString();
         }
     }
 }

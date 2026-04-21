@@ -5,18 +5,18 @@ using UnityEngine.Events;
 public class BallHealth : MonoBehaviour
 {
     [Header("Health Settings (Durability)")]
-    public int maxHealth = 15;
-    private int currentHealth;
+    public float maxHealth = 15;
+    private float currentHealth;
 
     [Header("Damage Settings")]
-    public int damagePerBounce = 1; 
+    public float damagePerBounce = 1f;
 
     [Header("Events")]
-    public UnityEvent<int, int> onHealthChanged;
+    public UnityEvent<float, float> onHealthChanged;
     public UnityEvent onTakeDamage;
     public UnityEvent onDeath;
 
-    private int targetLayerIndex;
+    int targetLayerIndex, wallLayerIndex;
 
     void Start()
     {
@@ -24,6 +24,7 @@ public class BallHealth : MonoBehaviour
 
         // 게임 시작 시 "Object" 문자열에 해당하는 레이어 번호를 미리 찾아 캐싱해 둡니다.
         targetLayerIndex = LayerMask.NameToLayer("Object");
+        wallLayerIndex = LayerMask.NameToLayer("Wall");
         
         if (targetLayerIndex == -1)
         {
@@ -36,15 +37,18 @@ public class BallHealth : MonoBehaviour
 
     void OnCollisionEnter2D(Collision2D collision)
     {
-        // 충돌한 대상의 레이어가 "Object"와 일치할 때만 대미지를 입습니다.
         if (collision.gameObject.layer == targetLayerIndex)
         {
             TakeDamage(damagePerBounce);
         }
+        else if(collision.gameObject.layer == wallLayerIndex)
+        {
+            TakeDamage(damagePerBounce / 2f);
+        }
     }
 
     // 외부(러시안 룰렛, 가시 함정 등)에서 강제로 큰 데미지를 줄 때도 사용할 수 있도록 public으로 열어둡니다.
-    public void TakeDamage(int damage)
+    public void TakeDamage(float damage)
     {
         // 이미 파괴 처리 중이라면 중복 실행 방지
         if (currentHealth <= 0) return;

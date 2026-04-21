@@ -5,9 +5,9 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance;
     
     [Header("Turn States")]
-    public bool isTurnActive = false;   // 플레이어가 발사해서 턴이 진행 중인지
-    public bool isSpawning = false;     // 런처가 아직 공을 생성(장전) 중인지
-    private bool isCalculating = false; // 정산 중인지
+    public bool isTurnActive = false;   // 런처가 발사를 시작하면 true
+    public bool isSpawning = false;     // 코루틴에서 공을 쏘고 있는 중이면 true
+    public bool isCalculating = false;  // 정산 코루틴이 돌고 있으면 true
 
     void Awake()
     {
@@ -16,12 +16,16 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
-        // 핵심 변경점: 턴이 진행 중이고, 공 스폰이 완전히 끝났으며, 정산 중이 아닐 때만 감지합니다.
+        // 턴이 시작되었고, 장전된 공을 모두 쏘았으며(isSpawning == false), 아직 정산 중이 아닐 때만 검사
         if (isTurnActive && !isSpawning && !isCalculating)
         {
             GameObject[] balls = GameObject.FindGameObjectsWithTag("Ball");
+            
+            // 디버깅용: 만약 정산이 안 된다면, 콘솔창에서 파티클 갯수가 0이 안 되거나 공 갯수가 0이 아닌지 확인하세요!
+            // Debug.Log($"남은 공: {balls.Length}, 남은 파티클: {UIManager.Instance.activeScoreParticles}");
 
-            // 공도 다 파괴되었고, 날아가는 파티클도 없으면 정산 시작
+            // 1. 맵 위에 공이 하나도 없고
+            // 2. 날아가는 파티클도 모두 패널에 도착했다면 정산 시작
             if (balls.Length == 0 && UIManager.Instance.activeScoreParticles == 0)
             {
                 isCalculating = true;
@@ -30,42 +34,46 @@ public class GameManager : MonoBehaviour
         }
     }
     
-    // --- 런처(BallLauncher)에서 호출해 줄 함수들 ---
-
+    // BallLauncher에서 발사를 시작할 때 호출
     public void OnFireStarted()
     {
         isTurnActive = true;
         isSpawning = true;
         isCalculating = false;
+        
+        // 턴 시작 시 만약의 버그(이전 턴의 파티클 카운터 꼬임 등)를 방지하기 위해 0으로 강제 초기화
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.activeScoreParticles = 0;
+        }
     }
 
+    // BallLauncher에서 5발을 모두 스폰하고 나면 호출
     public void OnFireFinished()
     {
         isSpawning = false;
     }
 
-    // 다음 라운드를 시작할 때 호출
+    // 파티클이 적을 타격하고 난 뒤(턴 종료 직후) 다음 턴 장전을 위해 호출
     public void StartNewTurn()
     {
-        // 1. 상태 플래그들 초기화
+        Debug.Log("--- 새 턴(라운드) 장전 시작 ---");
+        
+        // 1. 모든 플래그 완벽하게 초기화 (다음 발사를 대기하는 상태)
         isTurnActive = false;
         isSpawning = false;
         isCalculating = false;
 
-        // 2. 점수 매니저 초기화 (텍스트 숨기기, 점수 0/1로 리셋)
+        // 2. 점수판 초기화
         if (ScoreManager.Instance != null)
         {
             ScoreManager.Instance.ResetRound();
         }
 
-        // 3. 덱 매니저에게 다음 라운드용 공 5개 장전 요청
+        // 3. 덱 매니저에게 다음 공 5개 장전 지시
         if (DeckManager.Instance != null)
         {
-            // DeckManager에 작성해둔 StartRound()가 실행되면서 
-            // 새로운 BallData 5개를 뽑고 UI(MagazineUI)를 갱신합니다.
             DeckManager.Instance.StartRound();
         }
-
-        Debug.Log("새 라운드 시작: 공 장전 완료.");
     }
 }
