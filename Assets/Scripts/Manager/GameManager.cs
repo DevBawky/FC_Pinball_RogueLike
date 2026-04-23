@@ -26,7 +26,7 @@ public class GameManager : MonoBehaviour
 
             // 1. 맵 위에 공이 하나도 없고
             // 2. 날아가는 파티클도 모두 패널에 도착했다면 정산 시작
-            if (balls.Length == 0 && UIManager.Instance.activeScoreParticles == 0)
+            if (balls.Length == 0 && MainGameUIManager.Instance.activeScoreParticles == 0)
             {
                 isCalculating = true;
                 ScoreManager.Instance.OnAllBallsDestroyed();
@@ -42,9 +42,9 @@ public class GameManager : MonoBehaviour
         isCalculating = false;
         
         // 턴 시작 시 만약의 버그(이전 턴의 파티클 카운터 꼬임 등)를 방지하기 위해 0으로 강제 초기화
-        if (UIManager.Instance != null)
+        if (MainGameUIManager.Instance != null)
         {
-            UIManager.Instance.activeScoreParticles = 0;
+            MainGameUIManager.Instance.activeScoreParticles = 0;
         }
     }
 

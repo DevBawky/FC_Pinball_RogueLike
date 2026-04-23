@@ -55,9 +55,9 @@ public class BallController : MonoBehaviour
 
     public void OnHitObject(Vector3 hitPosition)
     {
-        if (UIManager.Instance != null)
+        if (MainGameUIManager.Instance != null)
         {
-            UIManager.Instance.SpawnFlyingScore(hitPosition, currentScoreType, currentScoreValue);
+            MainGameUIManager.Instance.SpawnFlyingScore(hitPosition, currentScoreType, currentScoreValue);
         }
     }
 }

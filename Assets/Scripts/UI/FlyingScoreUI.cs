@@ -63,9 +63,9 @@ public class FlyingScoreUI : MonoBehaviour
 
     void OnDestroy()
     {
-        if (UIManager.Instance != null)
+        if (MainGameUIManager.Instance != null)
         {
-            UIManager.Instance.activeScoreParticles--;
+            MainGameUIManager.Instance.activeScoreParticles--;
         }
     }
 }

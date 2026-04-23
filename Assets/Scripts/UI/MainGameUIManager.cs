@@ -1,8 +1,8 @@
 using UnityEngine;
 
-public class UIManager : MonoBehaviour
+public class MainGameUIManager : MonoBehaviour
 {
-    public static UIManager Instance;
+    public static MainGameUIManager Instance;
 
     [Header("References")]
     public Canvas mainCanvas;
