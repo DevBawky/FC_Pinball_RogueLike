@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.Tilemaps;
 
 public class EnemyManager : MonoBehaviour
 {
@@ -44,6 +45,12 @@ public class EnemyManager : MonoBehaviour
 
         UpdateHealthUIInstantly();
     }
+
+    [Header("Fade On Death")]
+    [Tooltip("Root transform whose children will be faded out on death. If null, this GameObject's transform will be used.")]
+    public Transform fadeRoot;
+    [Tooltip("Duration in seconds for fading renderers to alpha=0.")]
+    public float fadeDurationOnDeath = 1f;
 
     void Update()
     {
@@ -153,6 +160,73 @@ public class EnemyManager : MonoBehaviour
     private void Die()
     {
         Debug.Log("현상금 수배범 처치 완료! 다음 스테이지로!");
-        // TODO: 보스 파괴 폭발 이펙트 등
+        MainMenuUIManager.Instance.BeatEnemy();
+    }
+
+    public void FadeMap() => StartCoroutine(FadeChildrenToTransparent(fadeRoot, fadeDurationOnDeath));
+
+    private IEnumerator FadeChildrenToTransparent(Transform root, float duration)
+    {
+        if (root == null) yield break;
+
+        // Gather renderers/components to fade
+        SpriteRenderer[] spriteRenderers = root.GetComponentsInChildren<SpriteRenderer>(true);
+        Tilemap[] tilemaps = root.GetComponentsInChildren<Tilemap>(true);
+
+        Color[] spriteOriginal = new Color[spriteRenderers.Length];
+        for (int i = 0; i < spriteRenderers.Length; i++) spriteOriginal[i] = spriteRenderers[i].color;
+
+        // Read original colors from Tilemap components
+        Color[] tilemapOriginal = new Color[tilemaps.Length];
+        for (int i = 0; i < tilemaps.Length; i++) tilemapOriginal[i] = tilemaps[i].color;
+
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+
+            // Lerp alpha for sprite renderers
+            for (int i = 0; i < spriteRenderers.Length; i++)
+            {
+                var sr = spriteRenderers[i];
+                if (sr == null) continue;
+                Color c = spriteOriginal[i];
+                c.a = Mathf.Lerp(spriteOriginal[i].a, 0f, t);
+                sr.color = c;
+            }
+
+            // Lerp alpha for Tilemap components
+            for (int i = 0; i < tilemaps.Length; i++)
+            {
+                var tm = tilemaps[i];
+                if (tm == null) continue;
+                Color orig = tilemapOriginal[i];
+                Color c = orig;
+                c.a = Mathf.Lerp(orig.a, 0f, t);
+                tm.color = c;
+            }
+
+            yield return null;
+        }
+
+        // Ensure fully transparent at the end
+        for (int i = 0; i < spriteRenderers.Length; i++)
+        {
+            var sr = spriteRenderers[i];
+            if (sr == null) continue;
+            Color c = sr.color;
+            c.a = 0f;
+            sr.color = c;
+        }
+
+        for (int i = 0; i < tilemaps.Length; i++)
+        {
+            var tm = tilemaps[i];
+            if (tm == null) continue;
+            Color final = tilemapOriginal[i];
+            final.a = 0f;
+            tm.color = final;
+        }
     }
 }
