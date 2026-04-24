@@ -567,7 +567,7 @@ MonoBehaviour:
   _normalSprite: {fileID: 1345598292, guid: fb1baa2719696bb41bd7f138e7b0dcc2, type: 3}
   _treasureSprite: {fileID: -2136333250, guid: fb1baa2719696bb41bd7f138e7b0dcc2, type: 3}
   _eventSprite: {fileID: -1648826688, guid: fb1baa2719696bb41bd7f138e7b0dcc2, type: 3}
-  _shopSprite: {fileID: -1648826688, guid: fb1baa2719696bb41bd7f138e7b0dcc2, type: 3}
+  _shopSprite: {fileID: 883420785, guid: fb1baa2719696bb41bd7f138e7b0dcc2, type: 3}
   _bossSprite: {fileID: -1695940581, guid: fb1baa2719696bb41bd7f138e7b0dcc2, type: 3}
 --- !u!1 &8242945021155070826
 GameObject:
