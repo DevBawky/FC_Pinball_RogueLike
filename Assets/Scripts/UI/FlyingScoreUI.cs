@@ -65,7 +65,8 @@ public class FlyingScoreUI : MonoBehaviour
     {
         if (MainGameUIManager.Instance != null)
         {
-            MainGameUIManager.Instance.activeScoreParticles--;
+            MainGameUIManager.Instance.activeScoreParticles =
+                Mathf.Max(0, MainGameUIManager.Instance.activeScoreParticles - 1);
         }
     }
 }

@@ -34,6 +34,23 @@ public class DamageParticleManager : MonoBehaviour
 
     private IEnumerator FireRoutine(float totalDamage)
     {
+        if (totalDamage <= 0f)
+        {
+            activeParticles = 0;
+
+            if (ScoreManager.Instance != null)
+            {
+                ScoreManager.Instance.ReduceTotalDamageText(0f, 0f, 0f);
+            }
+
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.PrepareNextAttack();
+            }
+
+            yield break;
+        }
+
         int particleCount = Mathf.FloorToInt(totalDamage / particleBaseDamage);
         float actualDamagePerParticle = particleBaseDamage;
 
@@ -50,6 +67,16 @@ public class DamageParticleManager : MonoBehaviour
 
         remainderDamage = totalDamage - (particleCount * actualDamagePerParticle);
         activeParticles = particleCount;
+
+        if (particleCount <= 0)
+        {
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.PrepareNextAttack();
+            }
+
+            yield break;
+        }
 
         float currentDisplayDamage = totalDamage;
 

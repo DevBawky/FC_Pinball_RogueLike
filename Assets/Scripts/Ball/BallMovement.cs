@@ -13,7 +13,7 @@ public class BallMovement : MonoBehaviour
 
     void Start()
     {
-        rb = GetComponent<Rigidbody2D>();
+        EnsureRigidbody();
 
         // 1. 완벽한 등속 운동과 터널링 방지를 위한 Rigidbody 강제 세팅
         rb.bodyType = RigidbodyType2D.Dynamic;
@@ -51,5 +51,37 @@ public class BallMovement : MonoBehaviour
         // 3. 물리 엔진이 계산한 불완전한 충돌 결과를 무시하고, 
         // 우리가 수학적으로 구한 완벽한 방향에 목표 속도를 강제로 덮어씌웁니다.
         rb.linearVelocity = reflectedDirection * speed;
+    }
+
+    public Vector2 GetCurrentDirection()
+    {
+        EnsureRigidbody();
+
+        if (rb != null && rb.linearVelocity.sqrMagnitude > 0.0001f)
+        {
+            return rb.linearVelocity.normalized;
+        }
+
+        return direction.normalized;
+    }
+
+    public void SetDirection(Vector2 newDirection)
+    {
+        EnsureRigidbody();
+
+        direction = newDirection == Vector2.zero ? Vector2.up : newDirection.normalized;
+
+        if (rb != null)
+        {
+            rb.linearVelocity = direction * speed;
+        }
+    }
+
+    private void EnsureRigidbody()
+    {
+        if (rb == null)
+        {
+            rb = GetComponent<Rigidbody2D>();
+        }
     }
 }

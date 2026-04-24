@@ -8,6 +8,12 @@ public class EnemyManager : MonoBehaviour
 {
     public static EnemyManager Instance;
 
+    [Header("Enemy Data")]
+    [SerializeField] private EnemyData currentEnemyData;
+    [SerializeField] private Image enemySpriteRenderer;
+
+    public EnemyData CurrentEnemyData => currentEnemyData;
+
     [Header("Enemy Stats")]
     public float maxHealth = 5000f;
     private float currentHealth;        // 논리적인 실제 체력
@@ -35,15 +41,12 @@ public class EnemyManager : MonoBehaviour
 
     void Start()
     {
-        currentHealth = maxHealth;
-        displayHealth = maxHealth;
-        
         if (accumulatedDamageText != null)
         {
             accumulatedDamageText.gameObject.SetActive(false);
         }
 
-        UpdateHealthUIInstantly();
+        InitializeBattleEnemy();
     }
 
     [Header("Fade On Death")]
@@ -157,6 +160,40 @@ public class EnemyManager : MonoBehaviour
         if (healthText != null) healthText.text = $"{Mathf.RoundToInt(currentHealth)} / {maxHealth}";
     }
 
+    public void InitializeBattleEnemy()
+    {
+        ApplyEnemyData(currentEnemyData);
+    }
+
+    public void ApplyEnemyData(EnemyData enemyData)
+    {
+        if (enemyData != null)
+        {
+            currentEnemyData = enemyData;
+            maxHealth = enemyData.maxHealth;
+
+            if (enemySpriteRenderer != null)
+            {
+                enemySpriteRenderer.sprite = enemyData.enemySprite;
+                enemySpriteRenderer.enabled = enemyData.enemySprite != null;
+            }
+        }
+
+        currentHealth = maxHealth;
+        displayHealth = maxHealth;
+        currentAccumulatedDamage = 0f;
+        isDead = false;
+
+        if (accumulatedDamageText != null)
+        {
+            accumulatedDamageText.gameObject.SetActive(false);
+            accumulatedDamageText.color = Color.white;
+            accumulatedDamageText.transform.localScale = Vector3.one;
+        }
+
+        UpdateHealthUIInstantly();
+    }
+
     private void Die()
     {
         Debug.Log("현상금 수배범 처치 완료! 다음 스테이지로!");
@@ -164,6 +201,12 @@ public class EnemyManager : MonoBehaviour
     }
 
     public void FadeMap() => StartCoroutine(FadeChildrenToTransparent(fadeRoot, fadeDurationOnDeath));
+
+    public void RestoreStageVisuals()
+    {
+        RestoreTilemaps();
+        RestoreObjectLayerSpriteRenderers();
+    }
 
     private IEnumerator FadeChildrenToTransparent(Transform root, float duration)
     {
@@ -227,6 +270,43 @@ public class EnemyManager : MonoBehaviour
             Color final = tilemapOriginal[i];
             final.a = 0f;
             tm.color = final;
+        }
+    }
+
+    private void RestoreTilemaps()
+    {
+        Transform root = fadeRoot != null ? fadeRoot : transform;
+        Tilemap[] tilemaps = root.GetComponentsInChildren<Tilemap>(true);
+
+        for (int i = 0; i < tilemaps.Length; i++)
+        {
+            if (tilemaps[i] == null) continue;
+
+            Color color = tilemaps[i].color;
+            color.a = 1f;
+            tilemaps[i].color = color;
+        }
+    }
+
+    private void RestoreObjectLayerSpriteRenderers()
+    {
+        int objectLayerIndex = LayerMask.NameToLayer("Object");
+        if (objectLayerIndex == -1)
+        {
+            return;
+        }
+
+        SpriteRenderer[] spriteRenderers = FindObjectsByType<SpriteRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+        for (int i = 0; i < spriteRenderers.Length; i++)
+        {
+            SpriteRenderer spriteRenderer = spriteRenderers[i];
+            if (spriteRenderer == null) continue;
+            if (spriteRenderer.gameObject.layer != objectLayerIndex) continue;
+
+            Color color = spriteRenderer.color;
+            color.a = 1f;
+            spriteRenderer.color = color;
         }
     }
 }

@@ -17,10 +17,12 @@ public class BallHealth : MonoBehaviour
     public UnityEvent onDeath;
 
     int targetLayerIndex, wallLayerIndex;
+    private BallController ballController;
 
     void Start()
     {
         currentHealth = maxHealth;
+        ballController = GetComponent<BallController>();
 
         // 게임 시작 시 "Object" 문자열에 해당하는 레이어 번호를 미리 찾아 캐싱해 둡니다.
         targetLayerIndex = LayerMask.NameToLayer("Object");
@@ -37,13 +39,25 @@ public class BallHealth : MonoBehaviour
 
     void OnCollisionEnter2D(Collision2D collision)
     {
+        Vector3 hitPoint = collision.contactCount > 0
+            ? collision.GetContact(0).point
+            : collision.transform.position;
+
         if (collision.gameObject.layer == targetLayerIndex)
         {
             TakeDamage(damagePerBounce);
+            ballController?.TryTriggerSpecialAbility(BallSpecialAbilityCollisionType.Object, hitPoint, collision.gameObject);
         }
         else if(collision.gameObject.layer == wallLayerIndex)
         {
-            TakeDamage(damagePerBounce / 2f);
+            float wallDamage = damagePerBounce / 2f;
+            if (GameManager.Instance != null)
+            {
+                wallDamage = GameManager.Instance.ApplyWallCollisionDamageReduction(wallDamage);
+            }
+
+            TakeDamage(wallDamage);
+            ballController?.TryTriggerSpecialAbility(BallSpecialAbilityCollisionType.Wall, hitPoint, collision.gameObject);
         }
     }
 
@@ -70,6 +84,18 @@ public class BallHealth : MonoBehaviour
     public void ResetHealth()
     {
         currentHealth = maxHealth;
+        onHealthChanged.Invoke(currentHealth, maxHealth);
+    }
+
+    public float GetCurrentHealth()
+    {
+        return currentHealth;
+    }
+
+    public void SetHealth(float newCurrentHealth, float newMaxHealth)
+    {
+        maxHealth = newMaxHealth;
+        currentHealth = Mathf.Clamp(newCurrentHealth, 0f, maxHealth);
         onHealthChanged.Invoke(currentHealth, maxHealth);
     }
 

@@ -7,6 +7,7 @@ public class MainGameUIManager : MonoBehaviour
     [Header("References")]
     public Canvas mainCanvas;
     public GameObject flyingScorePrefab;   
+    public GameObject FloatingPanel;
 
     [Header("Targets (어디로 날아갈 것인가)")]
     public RectTransform chipsTarget; // 좌측 상단 붉은색 패널 중심

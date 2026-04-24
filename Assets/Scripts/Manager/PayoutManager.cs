@@ -24,16 +24,39 @@ public class PayoutManager : MonoBehaviour
     [Header("Timing")]
     public float totalCoinAppearDuration = 1.2f;
     public float sectionDelay = 0.25f;
+    public float coinCountUpDuration = 0.5f;
 
     private Coroutine payoutRoutine;
+    private Coroutine coinCountRoutine;
 
     private int pendingPayoutAmount = 0;
     private bool isPayoutReady = false;
+    private bool isCoinListenerRegistered = false;
 
     void Awake()
     {
         if (Instance == null) Instance = this;
         payoutButton.onClick.AddListener(OnClickPayoutButton);
+    }
+
+    void Start()
+    {
+        TryRegisterCoinListener();
+
+        if (GameManager.Instance != null)
+        {
+            RefreshCoinText(GameManager.Instance.currentCoin);
+        }
+    }
+
+    void OnEnable()
+    {
+        TryRegisterCoinListener();
+    }
+
+    void OnDisable()
+    {
+        UnregisterCoinListener();
     }
 
     public void StartPayout()
@@ -134,26 +157,21 @@ public class PayoutManager : MonoBehaviour
     public void OnClickPayoutButton()
     {
         if (!isPayoutReady) return;
-        if (pendingPayoutAmount <= 0) return;
 
-        GameManager.Instance.AddCoin(pendingPayoutAmount);
-
-        if (currentCoinText != null)
-        {
-            currentCoinText.text = $"Coin: {GameManager.Instance.currentCoin}";
-        }
-
-        pendingPayoutAmount = 0;
         isPayoutReady = false;
-
         SetPayoutButtonInteractable(false);
 
         if (payoutButtonText != null)
         {
-            payoutButtonText.text = "PAID";
+            payoutButtonText.text = pendingPayoutAmount > 0 ? "PAYING..." : "PAID";
         }
 
-        GameManager.Instance.EnterShop();
+        if (coinCountRoutine != null)
+        {
+            StopCoroutine(coinCountRoutine);
+        }
+
+        coinCountRoutine = StartCoroutine(CountUpCoinAndEnterShopRoutine());
     }
 
     private void SetTextsToInitialState()
@@ -175,7 +193,7 @@ public class PayoutManager : MonoBehaviour
 
         if (currentCoinText != null)
         {
-            currentCoinText.text = $"Coin: {GameManager.Instance.currentCoin}";
+            RefreshCoinText(GameManager.Instance.currentCoin);
         }
     }
 
@@ -201,6 +219,33 @@ public class PayoutManager : MonoBehaviour
         ClearChildren(interestCoinParent);
     }
 
+    private IEnumerator CountUpCoinAndEnterShopRoutine()
+    {
+        int amountToAdd = pendingPayoutAmount;
+
+        pendingPayoutAmount = 0;
+
+        if (amountToAdd > 0)
+        {
+            float stepDelay = coinCountUpDuration / amountToAdd;
+
+            for (int i = 1; i <= amountToAdd; i++)
+            {
+                GameManager.Instance.AddCoin(1);
+
+                yield return new WaitForSeconds(stepDelay);
+            }
+        }
+
+        if (payoutButtonText != null)
+        {
+            payoutButtonText.text = "PAID";
+        }
+
+        coinCountRoutine = null;
+        GameManager.Instance.EnterShop();
+    }
+
     private void ClearChildren(Transform parent)
     {
         if (parent == null) return;
@@ -209,5 +254,44 @@ public class PayoutManager : MonoBehaviour
         {
             Destroy(parent.GetChild(i).gameObject);
         }
+    }
+
+    private void RefreshCoinText(int currentCoin)
+    {
+        if (currentCoinText != null)
+        {
+            currentCoinText.text = $"{currentCoin}";
+        }
+    }
+
+    private void TryRegisterCoinListener()
+    {
+        if (isCoinListenerRegistered)
+        {
+            return;
+        }
+
+        if (GameManager.Instance == null)
+        {
+            return;
+        }
+
+        GameManager.Instance.CoinChanged += RefreshCoinText;
+        isCoinListenerRegistered = true;
+    }
+
+    private void UnregisterCoinListener()
+    {
+        if (!isCoinListenerRegistered)
+        {
+            return;
+        }
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.CoinChanged -= RefreshCoinText;
+        }
+
+        isCoinListenerRegistered = false;
     }
 }

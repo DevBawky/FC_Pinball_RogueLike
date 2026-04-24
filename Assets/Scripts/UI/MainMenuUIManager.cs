@@ -58,6 +58,7 @@ public class MainMenuUIManager : MonoBehaviour
         _EnemySelectPanel.SetActive(true);
         ResetProgress();
         GenerateStageSelectPanels();
+        MainGameUIManager.Instance.FloatingPanel.SetActive(true);
         // GameStart 버튼을 누르면 게임 매니저에게도 스테이지 선택(턴 시작)을 알립니다.
         if (GameManager.Instance != null)
         {
@@ -91,6 +92,26 @@ public class MainMenuUIManager : MonoBehaviour
         }
 
         UpdateProgressText(_stagesCompleted / (float)_stagesBeforeBoss, _stagesCompleted);
+    }
+
+    public void RefreshStageSelectionFromShop()
+    {
+        if (_EnemySelectPanel != null)
+        {
+            _EnemySelectPanel.SetActive(true);
+        }
+
+        if (_MainGamePanel != null)
+        {
+            _MainGamePanel.SetActive(false);
+        }
+
+        if (_stageMap != null)
+        {
+            _stageMap.SetActive(false);
+        }
+
+        GenerateStageSelectPanels();
     }
 
     StageType GetRandomStageType()
@@ -189,7 +210,7 @@ public class MainMenuUIManager : MonoBehaviour
 
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.StartNewTurn();
+            GameManager.Instance.GoToPayout();
         }
     }
 
