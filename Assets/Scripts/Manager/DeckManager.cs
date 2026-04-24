@@ -35,7 +35,9 @@ public class DeckManager : MonoBehaviour
         });
 
         InitializeRun();
-        StartRound();
+        
+        // ★ 핵심 수정 1: 게임 시작 직후 장전하지 않습니다.
+        // 이제 GameManager가 스테이지 선택 후 Battle 페이즈에 진입할 때 알아서 장전을 지시합니다.
     }
 
     // 1. 게임(런) 진입 시 한 번 호출하여 전체 덱을 뽑기 더미로 복사하고 섞습니다.
@@ -50,6 +52,12 @@ public class DeckManager : MonoBehaviour
     // 2. 매 라운드(스테이지) 시작 시 호출하여 5개의 공을 장전합니다.
     public void StartRound()
     {
+        // ★ 핵심 수정 2: 기존에 장전되어 있던 공이 있다면, 허공에 버리지 않고 '버린 더미'로 안전하게 회수합니다.
+        if (roundMagazine.Count > 0)
+        {
+            discardPile.AddRange(roundMagazine);
+        }
+        
         roundMagazine.Clear();
 
         for (int i = 0; i < ballsPerRound; i++)

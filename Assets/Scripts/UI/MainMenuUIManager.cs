@@ -41,8 +41,14 @@ public class MainMenuUIManager : MonoBehaviour
         else Destroy(gameObject);
     }
 
+// MainMenuUIManager.cs 내부의 Start 함수만 아래와 같이 수정해 주세요.
+
     void Start()
     {
+        if (_mainmenuPanel != null) _mainmenuPanel.SetActive(true);
+        if (_EnemySelectPanel != null) _EnemySelectPanel.SetActive(false);
+        if (_MainGamePanel != null) _MainGamePanel.SetActive(false);
+
         _gameStartButton.onClick.AddListener(onStartButtonPressed);
     }
 
@@ -52,6 +58,11 @@ public class MainMenuUIManager : MonoBehaviour
         _EnemySelectPanel.SetActive(true);
         ResetProgress();
         GenerateStageSelectPanels();
+        // GameStart 버튼을 누르면 게임 매니저에게도 스테이지 선택(턴 시작)을 알립니다.
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.ReturnToStageSelection();
+        }
     }
 
     void GenerateStageSelectPanels()
@@ -141,22 +152,53 @@ public class MainMenuUIManager : MonoBehaviour
         _progressFillImage.fillAmount = to;
         _progressCoroutine = null;
 
-        _EnemySelectPanel.GetComponent<Animator>().Play("GoMainGame");
+        if (_EnemySelectPanel != null)
+        {
+            _EnemySelectPanel.GetComponent<Animator>().Play("GoMainGame");
+            yield return new WaitForSeconds(0.55f);
+            _EnemySelectPanel.SetActive(false);
+        }
 
-        yield return new WaitForSeconds(0.55f);
-        _EnemySelectPanel.SetActive(false);
-        _MainGamePanel.SetActive(true);
-        _stageMap.SetActive(true);
+        // 맵(배경)은 UI 매니저가 켜줍니다.
+        if (_stageMap != null) _stageMap.SetActive(true);
+
+        StartBattleFromUI();
     }
 
-    public void BeatEnemy(){
+    public void BeatEnemy()
+    {
         StartCoroutine(End());
     }
 
     IEnumerator End()
     {
-        _MainGamePanel.GetComponent<Animator>().Play("Battle_BeatEnemy");
+        if (_MainGamePanel != null)
+        {
+            _MainGamePanel.GetComponent<Animator>().Play("Battle_BeatEnemy");
+        }
+        
         yield return new WaitForSeconds(2.2f);
-        EnemyManager.Instance.FadeMap();
+        
+        if (EnemyManager.Instance != null)
+        {
+            EnemyManager.Instance.FadeMap();
+        }
+
+        // 맵 페이드 아웃 연출이 끝날 때까지 대기 (EnemyManager의 기본 fadeDuration이 1초입니다)
+        yield return new WaitForSeconds(1.5f);
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.StartNewTurn();
+        }
+    }
+
+    // GameStart 버튼에서 호출: 실제 턴/배틀을 시작합니다.
+    public void StartBattleFromUI()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.StartBattle();
+        }
     }
 }

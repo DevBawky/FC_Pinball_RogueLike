@@ -89,13 +89,8 @@ public class DamageParticleManager : MonoBehaviour
 
     private IEnumerator MoveParticleRoutine(GameObject pObj, float damageAmount)
     {
-        // 화면을 뚫고 지나가는 느낌을 주려면 곡선(Bezier)이나 지그재그(이전의 FlyingScoreUI처럼) 
-        // 움직임을 추가해도 좋지만, 여기서는 적에게 빠르게 직선/살짝 휘어서 꽂히는 느낌으로 구현합니다.
-
         Vector3 startPos = pObj.transform.position;
         Vector3 targetPos = endTarget.position;
-        
-        // 날아가는 동안 약간의 곡선(아치형)을 주기 위한 랜덤 오프셋
         Vector3 randomOffset = new Vector3(Random.Range(-200f, 200f), Random.Range(-100f, 100f), 0);
 
         float journeyTime = Vector3.Distance(startPos, targetPos) / particleSpeed;
@@ -106,9 +101,8 @@ public class DamageParticleManager : MonoBehaviour
             timer += Time.deltaTime;
             float percent = timer / journeyTime;
             
-            // 위치 보간 (직선 + 살짝 퍼졌다가 모이는 곡선 느낌)
             Vector3 currentPos = Vector3.Lerp(startPos, targetPos, percent);
-            currentPos += randomOffset * Mathf.Sin(percent * Mathf.PI); // 아치형 궤적
+            currentPos += randomOffset * Mathf.Sin(percent * Mathf.PI); 
 
             pObj.transform.position = currentPos;
             yield return null;
@@ -118,19 +112,17 @@ public class DamageParticleManager : MonoBehaviour
         if (EnemyManager.Instance != null)
         {
             EnemyManager.Instance.TakeDamage(damageAmount);
-            
-            // TODO: 이곳에 "타격 파티클 이펙트"나 "카메라 쉐이크"를 넣으면 아주 좋습니다.
         }
 
         Destroy(pObj);
         activeParticles--;
 
-        // 모든 파티클이 타격을 끝마쳤다면 다음 턴 준비를 시작합니다.
+        // ★ 추가: 모든 대미지 파티클이 적에게 도착했다면 GameManager에게 턴 종료를 알립니다.
         if (activeParticles <= 0)
         {
             if (GameManager.Instance != null)
             {
-                GameManager.Instance.StartNewTurn();
+                GameManager.Instance.PrepareNextAttack();
             }
         }
     }

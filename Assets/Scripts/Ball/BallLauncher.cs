@@ -4,17 +4,19 @@ using UnityEngine;
 public class BallLauncher : MonoBehaviour
 {
     [Header("발사 설정")]
-    public GameObject ballPrefab; 
-    public float spawnDelay = 0.2f; 
-    
-    public LayerMask floorLayer; 
+    public GameObject ballPrefab;
+    public float spawnDelay = 0.2f;
 
-    private bool isSpawningRoutineActive = false; 
+    public LayerMask floorLayer;
+
+    private bool isSpawningRoutineActive = false;
 
     void Update()
     {
         if (Input.GetMouseButtonDown(0) && !isSpawningRoutineActive)
         {
+            if (GameManager.Instance != null && GameManager.Instance.currentPhase != GameManager.GamePhase.Battle) return;
+
             if (DeckManager.Instance == null || DeckManager.Instance.roundMagazine.Count == 0) return;
             if (GameManager.Instance != null && GameManager.Instance.isCalculating) return;
 
@@ -25,12 +27,13 @@ public class BallLauncher : MonoBehaviour
 
             if (hitCollider != null)
             {
-                mousePos.z = 0f; 
+                if (GameManager.Instance != null && !GameManager.Instance.TryConsumeLife()) return;
+
+                mousePos.z = 0f;
                 StartCoroutine(SpawnBallsRoutine(mousePos));
             }
             else
             {
-                // 바닥이 아닌 곳(벽, 허공, UI 등)을 클릭했을 때의 처리 (디버그 로그)
                 Debug.Log("바닥(Floor) 영역을 클릭해야 발사할 수 있습니다!");
             }
         }
@@ -48,16 +51,16 @@ public class BallLauncher : MonoBehaviour
         while (true)
         {
             BallData nextBall = DeckManager.Instance.FireNextBall();
-            
+
             if (nextBall == null)
             {
-                break; 
+                break;
             }
 
             GameObject newBall = Instantiate(ballPrefab, spawnPosition, Quaternion.identity);
-            
+
             Vector2 randomDir = Random.insideUnitCircle.normalized;
-            if (randomDir == Vector2.zero) randomDir = Vector2.up; 
+            if (randomDir == Vector2.zero) randomDir = Vector2.up;
 
             BallController controller = newBall.GetComponent<BallController>();
             if (controller != null)
@@ -72,7 +75,7 @@ public class BallLauncher : MonoBehaviour
         {
             GameManager.Instance.OnFireFinished();
         }
-        
+
         isSpawningRoutineActive = false;
     }
 }
