@@ -10,8 +10,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 23fdbdfc626bbc643938a6f1f4f2964e, type: 3}
-  m_Name: Test
+  m_Name: Test Boss
   m_EditorClassIdentifier: 
   enemyName: New Enemy
-  maxHealth: 3000
-  enemySprite: {fileID: 6937817954938267909, guid: 32b5800169b000d429e0dace6ba6cd28, type: 3}
+  maxHealth: 20000
+  enemySprite: {fileID: -6470460504253458178, guid: 22b30362498967e45bd6232af8cd957d, type: 3}

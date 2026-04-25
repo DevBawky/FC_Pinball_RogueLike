@@ -24,6 +24,8 @@ public class GameManager : MonoBehaviour
     public bool isTurnActive = false;
     public bool isSpawning = false;
     public bool isCalculating = false;
+    [SerializeField, Min(0f)] private float scoreParticleWaitTimeout = 3f;
+    private float scoreParticleWaitTimer = 0f;
 
     [Header("Battle Life")]
     public int maxLifeCount = 5;
@@ -68,7 +70,9 @@ public class GameManager : MonoBehaviour
 
     [Header("Battle Content")]
     [SerializeField] private BattleObjectSpawner battleObjectSpawner;
+    [SerializeField] private BattleCameraShake battleCameraShake;
     private Coroutine startBattleRoutine;
+    private StageType currentBattleStageType = StageType.Battle;
 
     void Awake()
     {
@@ -88,10 +92,15 @@ public class GameManager : MonoBehaviour
         {
             GameObject[] balls = GameObject.FindGameObjectsWithTag("Ball");
 
-            if (balls.Length == 0 && MainGameUIManager.Instance.activeScoreParticles == 0)
+            if (balls.Length == 0)
             {
-                isCalculating = true;
-                ScoreManager.Instance.OnAllBallsDestroyed();
+                StopBattleCameraShake();
+
+                TryStartFinalDamageCalculation();
+            }
+            else
+            {
+                scoreParticleWaitTimer = 0f;
             }
         }
     }
@@ -101,11 +110,14 @@ public class GameManager : MonoBehaviour
         isTurnActive = true;
         isSpawning = true;
         isCalculating = false;
+        scoreParticleWaitTimer = 0f;
 
         if (MainGameUIManager.Instance != null)
         {
             MainGameUIManager.Instance.activeScoreParticles = 0;
         }
+
+        StartBattleCameraShake();
     }
 
     public void OnFireFinished()
@@ -135,6 +147,8 @@ public class GameManager : MonoBehaviour
         isTurnActive = false;
         isSpawning = false;
         isCalculating = false;
+        scoreParticleWaitTimer = 0f;
+        StopBattleCameraShakeImmediately();
 
         currentPhase = GamePhase.PayOut;
         UpdatePanels();
@@ -147,12 +161,19 @@ public class GameManager : MonoBehaviour
 
     public void StartBattle()
     {
+        StartBattle(StageType.Battle);
+    }
+
+    public void StartBattle(StageType stageType)
+    {
         Debug.Log("--- 배틀 시작 ---");
 
+        currentBattleStageType = stageType;
         currentPhase = GamePhase.Battle;
         isTurnActive = false;
         isSpawning = false;
         isCalculating = false;
+        scoreParticleWaitTimer = 0f;
 
         currentLifeCount = maxLifeCount;
 
@@ -178,6 +199,8 @@ public class GameManager : MonoBehaviour
         isTurnActive = false;
         isSpawning = false;
         isCalculating = false;
+        scoreParticleWaitTimer = 0f;
+        StopBattleCameraShakeImmediately();
         UpdatePanels();
 
         if (MainGameUIManager.Instance != null)
@@ -231,7 +254,7 @@ public class GameManager : MonoBehaviour
 
         if (EnemyManager.Instance != null)
         {
-            EnemyManager.Instance.InitializeBattleEnemy();
+            EnemyManager.Instance.InitializeBattleEnemy(currentBattleStageType == StageType.BossBattle);
         }
 
         if (battleObjectSpawner != null)
@@ -254,6 +277,8 @@ public class GameManager : MonoBehaviour
             isTurnActive = false;
             isSpawning = false;
             isCalculating = false;
+            scoreParticleWaitTimer = 0f;
+            StopBattleCameraShakeImmediately();
 
             if (currentLifeCount <= 0)
             {
@@ -278,6 +303,83 @@ public class GameManager : MonoBehaviour
     public int GetRemainingLifeReward()
     {
         return currentLifeCount;
+    }
+
+    private void TryStartFinalDamageCalculation()
+    {
+        int activeScoreParticles = MainGameUIManager.Instance != null
+            ? MainGameUIManager.Instance.activeScoreParticles
+            : 0;
+
+        if (activeScoreParticles > 0)
+        {
+            scoreParticleWaitTimer += Time.deltaTime;
+
+            if (scoreParticleWaitTimer < scoreParticleWaitTimeout)
+            {
+                return;
+            }
+
+            Debug.LogWarning($"Score particles did not finish within {scoreParticleWaitTimeout:0.##} seconds. Forcing final damage calculation.");
+
+            if (MainGameUIManager.Instance != null)
+            {
+                MainGameUIManager.Instance.activeScoreParticles = 0;
+            }
+        }
+
+        scoreParticleWaitTimer = 0f;
+        isCalculating = true;
+
+        if (ScoreManager.Instance != null)
+        {
+            ScoreManager.Instance.OnAllBallsDestroyed();
+        }
+        else
+        {
+            Debug.LogWarning("ScoreManager is missing. Preparing the next attack without final damage calculation.");
+            PrepareNextAttack();
+        }
+    }
+
+    private void StartBattleCameraShake()
+    {
+        BattleCameraShake shake = GetBattleCameraShake();
+
+        if (shake != null)
+        {
+            shake.StartShake();
+        }
+    }
+
+    private void StopBattleCameraShake()
+    {
+        BattleCameraShake shake = GetBattleCameraShake();
+
+        if (shake != null)
+        {
+            shake.StopShake();
+        }
+    }
+
+    private void StopBattleCameraShakeImmediately()
+    {
+        BattleCameraShake shake = GetBattleCameraShake();
+
+        if (shake != null)
+        {
+            shake.StopShakeImmediately();
+        }
+    }
+
+    private BattleCameraShake GetBattleCameraShake()
+    {
+        if (battleCameraShake == null)
+        {
+            battleCameraShake = FindFirstObjectByType<BattleCameraShake>();
+        }
+
+        return battleCameraShake;
     }
 
     public int GetInterestReward()

@@ -31,12 +31,6 @@ public class DeckManager : MonoBehaviour
 
     void Start()
     {
-        onMagazineLoaded.AddListener((magazine) =>
-        {
-            MagazineUI ui = FindAnyObjectByType<MagazineUI>();
-            if (ui != null) ui.UpdateMagazineDisplay(magazine);
-        });
-
         InitializeRun();
     }
 

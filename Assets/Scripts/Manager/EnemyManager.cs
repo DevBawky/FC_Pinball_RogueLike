@@ -10,28 +10,29 @@ public class EnemyManager : MonoBehaviour
 
     [Header("Enemy Data")]
     [SerializeField] private EnemyData currentEnemyData;
+    [SerializeField] private EnemyData[] enemyPool;
+    [SerializeField] private EnemyData bossEnemyData;
     [SerializeField] private Image enemySpriteRenderer;
 
     public EnemyData CurrentEnemyData => currentEnemyData;
 
     [Header("Enemy Stats")]
     public float maxHealth = 5000f;
+    public float CurrentHealth => currentHealth;
     private float currentHealth;        // 논리적인 실제 체력
     private float displayHealth;        // UI에 보여주기 위해 서서히 줄어드는 가짜 체력
 
     [Header("UI References (Health)")]
     public Image healthBarFill;       
-    public TextMeshProUGUI healthText; 
+    public TMP_Text healthText; 
     public float healthLerpSpeed = 10f; // 체력바가 줄어드는 속도
 
     [Header("UI References (Damage Text)")]
-    public TextMeshProUGUI accumulatedDamageText; // 적 머리 위에 띄울 누적 대미지 텍스트
+    public TMP_Text accumulatedDamageText; // 적 머리 위에 띄울 누적 대미지 텍스트
     public float damageTextPunchScale = 1.5f;     // 대미지 누적 시 커질 스케일 배수
     public float damageTextResetTime = 1.5f;      // 타격이 끝난 후 텍스트가 사라지는 시간
 
-    private float currentAccumulatedDamage = 0f;
     private Coroutine punchCoroutine;
-    private Coroutine hideDamageCoroutine;
     private bool isDead = false;
 
     void Awake()
@@ -43,7 +44,7 @@ public class EnemyManager : MonoBehaviour
     {
         if (accumulatedDamageText != null)
         {
-            accumulatedDamageText.gameObject.SetActive(false);
+            accumulatedDamageText.gameObject.SetActive(true);
         }
 
         InitializeBattleEnemy();
@@ -68,6 +69,8 @@ public class EnemyManager : MonoBehaviour
                 
             if (healthText != null)
                 healthText.text = $"{Mathf.RoundToInt(displayHealth)} / {maxHealth}";
+
+            UpdateAccumulatedDamageText();
         }
     }
 
@@ -87,6 +90,7 @@ public class EnemyManager : MonoBehaviour
         if (currentHealth <= 0 && !isDead)
         {
             isDead = true;
+            UpdateAccumulatedDamageText();
             Die();
         }
     }
@@ -96,23 +100,21 @@ public class EnemyManager : MonoBehaviour
         if (accumulatedDamageText == null) return;
 
         // 대미지 누적
-        currentAccumulatedDamage += damage;
         
         // 텍스트 활성화
         accumulatedDamageText.gameObject.SetActive(true);
 
-        // ★ 핵심 변경점: 적 체력이 0 이하가 되었다면 "DIE!" 출력
         if (currentHealth <= 0)
         {
-            accumulatedDamageText.text = "DIE!";
-            
             accumulatedDamageText.color = Color.red; 
         }
         else
         {
             // 아직 살아있다면 정상적으로 누적 대미지 출력
-            accumulatedDamageText.text = $"-{Mathf.RoundToInt(currentAccumulatedDamage)}";
+            accumulatedDamageText.color = Color.white;
         }
+
+        UpdateAccumulatedDamageText();
 
         if (punchCoroutine != null) StopCoroutine(punchCoroutine);
         
@@ -121,8 +123,6 @@ public class EnemyManager : MonoBehaviour
         punchCoroutine = StartCoroutine(PunchScaleRoutine(currentPunchScale));
 
         // 일정 시간 뒤에 텍스트를 숨기는 코루틴 실행
-        if (hideDamageCoroutine != null) StopCoroutine(hideDamageCoroutine);
-        hideDamageCoroutine = StartCoroutine(HideDamageTextRoutine());
     }
 
     private IEnumerator PunchScaleRoutine(float targetScale)
@@ -145,24 +145,62 @@ public class EnemyManager : MonoBehaviour
     }
 
     // 파티클 공격이 모두 끝나고 나면 누적 대미지를 초기화하고 숨김
-    private IEnumerator HideDamageTextRoutine()
-    {
-        yield return new WaitForSeconds(damageTextResetTime);
-        
-        accumulatedDamageText.gameObject.SetActive(false);
-        currentAccumulatedDamage = 0f;
-    }
-
     // 초기 시작 시 UI를 즉시 맞추기 위한 헬퍼 함수
     private void UpdateHealthUIInstantly()
     {
         if (healthBarFill != null) healthBarFill.fillAmount = currentHealth / maxHealth;
         if (healthText != null) healthText.text = $"{Mathf.RoundToInt(currentHealth)} / {maxHealth}";
+        UpdateAccumulatedDamageText();
     }
 
-    public void InitializeBattleEnemy()
+    private void UpdateAccumulatedDamageText()
     {
-        ApplyEnemyData(currentEnemyData);
+        if (accumulatedDamageText == null) return;
+
+        accumulatedDamageText.gameObject.SetActive(true);
+
+        string healthValue = $"{Mathf.RoundToInt(currentHealth)} / {Mathf.RoundToInt(maxHealth)}";
+        if (isDead)
+        {
+            accumulatedDamageText.color = Color.red;
+        }
+        else
+        {
+            accumulatedDamageText.color = Color.white;
+        }
+
+        accumulatedDamageText.text = healthValue;
+    }
+
+    public void InitializeBattleEnemy(bool isBossBattle = false)
+    {
+        EnemyData selectedEnemyData = isBossBattle ? GetBossEnemyData() : GetRandomEnemyData();
+        ApplyEnemyData(selectedEnemyData);
+    }
+
+    private EnemyData GetRandomEnemyData()
+    {
+        if (enemyPool != null && enemyPool.Length > 0)
+        {
+            int randomIndex = Random.Range(0, enemyPool.Length);
+            if (enemyPool[randomIndex] != null)
+            {
+                return enemyPool[randomIndex];
+            }
+        }
+
+        return currentEnemyData;
+    }
+
+    private EnemyData GetBossEnemyData()
+    {
+        if (bossEnemyData != null)
+        {
+            return bossEnemyData;
+        }
+
+        Debug.LogWarning("Boss enemy data is not assigned. Falling back to a normal enemy.");
+        return GetRandomEnemyData();
     }
 
     public void ApplyEnemyData(EnemyData enemyData)
@@ -181,12 +219,11 @@ public class EnemyManager : MonoBehaviour
 
         currentHealth = maxHealth;
         displayHealth = maxHealth;
-        currentAccumulatedDamage = 0f;
         isDead = false;
 
         if (accumulatedDamageText != null)
         {
-            accumulatedDamageText.gameObject.SetActive(false);
+            accumulatedDamageText.gameObject.SetActive(true);
             accumulatedDamageText.color = Color.white;
             accumulatedDamageText.transform.localScale = Vector3.one;
         }

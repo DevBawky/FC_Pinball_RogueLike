@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using UnityEngine.UI;
 using System.Collections; // TextMeshPro 사용
 
 public class ScoreManager : MonoBehaviour
@@ -21,13 +22,28 @@ public class ScoreManager : MonoBehaviour
 
     [Header("Animation")]
     public float rollSpeed = 10f; // 숫자가 굴러가는 속도
-
-    [SerializeField] HealthBarUI _enemyHP;
     Coroutine textReduceCoroutine;
+
+    [Header("Lethal Flame Effects")]
+    [SerializeField] private GameObject flameEffectChips;
+    [SerializeField] private GameObject flameEffectMult;
+    [SerializeField] private float flameFadeInDuration = 1f;
+    [SerializeField] private float flameFadeOutDuration = 0.5f;
+
+    private Coroutine flameFadeCoroutine;
+    private float flameAlpha = 0f;
+    private bool flameVisible = false;
+    private bool suppressFlameEffects = false;
 
     void Awake()
     {
         if (Instance == null) Instance = this;
+    }
+
+    void Start()
+    {
+        ResolveFlameEffectReferences();
+        SetFlameAlpha(0f);
     }
 
     public void OnAllBallsDestroyed()
@@ -39,6 +55,16 @@ public class ScoreManager : MonoBehaviour
     {
         currentChips = 0;
         currentMult = 1;
+        suppressFlameEffects = false;
+        flameVisible = false;
+
+        if (flameFadeCoroutine != null)
+        {
+            StopCoroutine(flameFadeCoroutine);
+            flameFadeCoroutine = null;
+        }
+
+        SetFlameAlpha(0f);
         
         // UI 텍스트 초기화
         chipsText.text = "0";
@@ -66,6 +92,13 @@ public class ScoreManager : MonoBehaviour
             displayMult = Mathf.Lerp(displayMult, currentMult, Time.deltaTime * rollSpeed);
             multText.text = displayMult.ToString("F1");
         }
+
+        UpdateFlameEffectState();
+    }
+
+    void LateUpdate()
+    {
+        SetFlameAlpha(flameAlpha);
     }
 
     // 날아온 파티클이 도착했을 때 UIManager가 이 함수를 호출합니다.
@@ -93,7 +126,14 @@ public class ScoreManager : MonoBehaviour
 
     private IEnumerator CalculateFinalScoreRoutine()
     {
-        yield return new WaitForSeconds(0.5f);
+        suppressFlameEffects = true;
+        flameVisible = false;
+        if (flameFadeCoroutine != null)
+        {
+            StopCoroutine(flameFadeCoroutine);
+            flameFadeCoroutine = null;
+        }
+        yield return FadeFlameEffects(0f, flameFadeOutDuration);
 
         float totalDamage = currentChips * currentMult;
         
@@ -119,7 +159,144 @@ public class ScoreManager : MonoBehaviour
         {
             DamageParticleManager.Instance.FireDamageParticles(totalDamage);
         }
+        else
+        {
+            Debug.LogWarning("DamageParticleManager is missing. Applying final damage directly.");
+            ApplyFinalDamageDirectly(totalDamage);
+        }
 
+    }
+
+    private void ApplyFinalDamageDirectly(float totalDamage)
+    {
+        if (EnemyManager.Instance != null)
+        {
+            EnemyManager.Instance.TakeDamage(totalDamage);
+
+            if (EnemyManager.Instance.CurrentHealth <= 0f)
+            {
+                return;
+            }
+        }
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.PrepareNextAttack();
+        }
+    }
+
+    private void UpdateFlameEffectState()
+    {
+        bool shouldShow = ShouldShowFlameEffects();
+        if (shouldShow == flameVisible) return;
+
+        flameVisible = shouldShow;
+
+        if (flameFadeCoroutine != null)
+        {
+            StopCoroutine(flameFadeCoroutine);
+        }
+
+        float targetAlpha = shouldShow ? 1f : 0f;
+        float duration = shouldShow ? flameFadeInDuration : flameFadeOutDuration;
+        flameFadeCoroutine = StartCoroutine(FadeFlameEffects(targetAlpha, duration));
+    }
+
+    private bool ShouldShowFlameEffects()
+    {
+        if (suppressFlameEffects) return false;
+        if (EnemyManager.Instance == null) return false;
+
+        float enemyHealth = EnemyManager.Instance.CurrentHealth;
+        return enemyHealth > 0f && CalculateTotalDamage() >= enemyHealth;
+    }
+
+    private IEnumerator FadeFlameEffects(float targetAlpha, float duration)
+    {
+        ResolveFlameEffectReferences();
+
+        float startAlpha = flameAlpha;
+        float elapsed = 0f;
+
+        if (duration <= 0f)
+        {
+            SetFlameAlpha(targetAlpha);
+            flameFadeCoroutine = null;
+            yield break;
+        }
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            SetFlameAlpha(Mathf.Lerp(startAlpha, targetAlpha, t));
+            yield return null;
+        }
+
+        SetFlameAlpha(targetAlpha);
+        flameFadeCoroutine = null;
+    }
+
+    private void SetFlameAlpha(float alpha)
+    {
+        flameAlpha = Mathf.Clamp01(alpha);
+        SetEffectAlpha(flameEffectChips, flameAlpha);
+        SetEffectAlpha(flameEffectMult, flameAlpha);
+    }
+
+    private void SetEffectAlpha(GameObject effectRoot, float alpha)
+    {
+        if (effectRoot == null) return;
+
+        effectRoot.SetActive(true);
+
+        Graphic graphic = effectRoot.GetComponent<Graphic>();
+        if (graphic != null)
+        {
+            Color color = graphic.color;
+            color.a = alpha;
+            graphic.color = color;
+            return;
+        }
+
+        SpriteRenderer spriteRenderer = effectRoot.GetComponent<SpriteRenderer>();
+        if (spriteRenderer != null)
+        {
+            Color color = spriteRenderer.color;
+            color.a = alpha;
+            spriteRenderer.color = color;
+        }
+    }
+
+    private void ResolveFlameEffectReferences()
+    {
+        if (flameEffectChips == null)
+        {
+            flameEffectChips = FindSceneObjectByName("FlameEffect_Chips");
+        }
+
+        if (flameEffectMult == null)
+        {
+            flameEffectMult = FindSceneObjectByName("FlameEffect_Mult");
+        }
+    }
+
+    private GameObject FindSceneObjectByName(string objectName)
+    {
+        GameObject directMatch = GameObject.Find(objectName);
+        if (directMatch != null) return directMatch;
+
+        GameObject[] allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
+        for (int i = 0; i < allObjects.Length; i++)
+        {
+            GameObject obj = allObjects[i];
+            if (obj == null || obj.name != objectName) continue;
+            if (!obj.scene.IsValid()) continue;
+
+            return obj;
+        }
+
+        return null;
     }
 
     public void ReduceTotalDamageText(float startValue, float endValue, float duration)

@@ -29,7 +29,42 @@ public class DamageParticleManager : MonoBehaviour
     // ScoreManager에서 최종 대미지가 정해지면 이 함수를 호출합니다.
     public void FireDamageParticles(float totalDamage)
     {
+        if (!CanPlayDamageParticles())
+        {
+            Debug.LogWarning("Damage particle references are missing. Applying damage directly.");
+            ApplyDamageDirectly(totalDamage);
+            return;
+        }
+
         StartCoroutine(FireRoutine(totalDamage));
+    }
+
+    private bool CanPlayDamageParticles()
+    {
+        return damageParticlePrefab != null
+            && mainCanvas != null
+            && startTarget != null
+            && endTarget != null;
+    }
+
+    private void ApplyDamageDirectly(float totalDamage)
+    {
+        activeParticles = 0;
+
+        if (EnemyManager.Instance != null)
+        {
+            EnemyManager.Instance.TakeDamage(totalDamage);
+
+            if (EnemyManager.Instance.CurrentHealth <= 0f)
+            {
+                return;
+            }
+        }
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.PrepareNextAttack();
+        }
     }
 
     private IEnumerator FireRoutine(float totalDamage)

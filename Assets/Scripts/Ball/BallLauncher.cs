@@ -43,39 +43,56 @@ public class BallLauncher : MonoBehaviour
     {
         isSpawningRoutineActive = true;
 
-        if (GameManager.Instance != null)
+        try
         {
-            GameManager.Instance.OnFireStarted();
-        }
-
-        while (true)
-        {
-            BallData nextBall = DeckManager.Instance.FireNextBall();
-
-            if (nextBall == null)
+            if (GameManager.Instance != null)
             {
-                break;
+                GameManager.Instance.OnFireStarted();
             }
 
-            GameObject newBall = Instantiate(ballPrefab, spawnPosition, Quaternion.identity);
-
-            Vector2 randomDir = Random.insideUnitCircle.normalized;
-            if (randomDir == Vector2.zero) randomDir = Vector2.up;
-
-            BallController controller = newBall.GetComponent<BallController>();
-            if (controller != null)
+            while (true)
             {
-                controller.InitializeBall(nextBall, randomDir);
+                if (DeckManager.Instance == null)
+                {
+                    Debug.LogWarning("DeckManager is missing while firing balls.");
+                    break;
+                }
+
+                BallData nextBall = DeckManager.Instance.FireNextBall();
+
+                if (nextBall == null)
+                {
+                    break;
+                }
+
+                if (ballPrefab == null)
+                {
+                    Debug.LogError("Ball prefab is not assigned.");
+                    break;
+                }
+
+                GameObject newBall = Instantiate(ballPrefab, spawnPosition, Quaternion.identity);
+
+                Vector2 randomDir = Random.insideUnitCircle.normalized;
+                if (randomDir == Vector2.zero) randomDir = Vector2.up;
+
+                BallController controller = newBall.GetComponent<BallController>();
+                if (controller != null)
+                {
+                    controller.InitializeBall(nextBall, randomDir);
+                }
+
+                yield return new WaitForSeconds(spawnDelay);
+            }
+        }
+        finally
+        {
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.OnFireFinished();
             }
 
-            yield return new WaitForSeconds(spawnDelay);
+            isSpawningRoutineActive = false;
         }
-
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.OnFireFinished();
-        }
-
-        isSpawningRoutineActive = false;
     }
 }

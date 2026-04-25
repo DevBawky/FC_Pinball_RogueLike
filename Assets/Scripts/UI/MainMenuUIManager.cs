@@ -33,6 +33,7 @@ public class MainMenuUIManager : MonoBehaviour
     [SerializeField] float _progressLerpDuration = 0.5f;
 
     int _stagesCompleted = 0;
+    StageType _selectedStageType = StageType.Battle;
     Coroutine _progressCoroutine;
 
     void Awake()
@@ -86,7 +87,7 @@ public class MainMenuUIManager : MonoBehaviour
             StageSelectPrefab ssp = go.GetComponent<StageSelectPrefab>();
             if (ssp != null)
             {
-                StageType t = GetRandomStageType();
+                StageType t = ShouldGenerateBossStages() ? StageType.BossBattle : GetRandomStageType();
                 ssp.Initialize(t);
             }
         }
@@ -126,6 +127,18 @@ public class MainMenuUIManager : MonoBehaviour
 
     public void OnStageSelected(StageType type)
     {
+        _selectedStageType = type;
+
+        if (type == StageType.BossBattle)
+        {
+            if (_progressCoroutine != null) StopCoroutine(_progressCoroutine);
+            _progressCoroutine = StartCoroutine(AnimateProgressFill(
+                _progressFillImage != null ? _progressFillImage.fillAmount : 1f,
+                _progressFillImage != null ? _progressFillImage.fillAmount : 1f,
+                true));
+            return;
+        }
+
         // Called when a stage is chosen. Increment progress towards boss.
         if (_stagesCompleted >= _stagesBeforeBoss) return;
 
@@ -134,7 +147,7 @@ public class MainMenuUIManager : MonoBehaviour
         float to = Mathf.Clamp01(_stagesCompleted / (float)_stagesBeforeBoss);
 
         if (_progressCoroutine != null) StopCoroutine(_progressCoroutine);
-        _progressCoroutine = StartCoroutine(AnimateProgressFill(from, to));
+        _progressCoroutine = StartCoroutine(AnimateProgressFill(from, to, false));
 
         UpdateProgressText(to, _stagesCompleted);
 
@@ -152,6 +165,11 @@ public class MainMenuUIManager : MonoBehaviour
         UpdateProgressText(0f, 0);
     }
 
+    bool ShouldGenerateBossStages()
+    {
+        return _stagesBeforeBoss > 0 && _stagesCompleted >= _stagesBeforeBoss;
+    }
+
     void UpdateProgressText(float fillAmount, int completed)
     {
         if (_progressPercentageText == null) return;
@@ -159,7 +177,7 @@ public class MainMenuUIManager : MonoBehaviour
         _progressPercentageText.text = percent + "% (" + completed + "/" + _stagesBeforeBoss + ")";
     }
 
-    IEnumerator AnimateProgressFill(float from, float to)
+    IEnumerator AnimateProgressFill(float from, float to, bool resetProgressAfterStageStart)
     {
         if (_progressFillImage == null) yield break;
         float elapsed = 0f;
@@ -184,6 +202,11 @@ public class MainMenuUIManager : MonoBehaviour
         if (_stageMap != null) _stageMap.SetActive(true);
 
         StartBattleFromUI();
+
+        if (resetProgressAfterStageStart)
+        {
+            ResetProgress();
+        }
     }
 
     public void BeatEnemy()
@@ -219,7 +242,7 @@ public class MainMenuUIManager : MonoBehaviour
     {
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.StartBattle();
+            GameManager.Instance.StartBattle(_selectedStageType);
         }
     }
 }

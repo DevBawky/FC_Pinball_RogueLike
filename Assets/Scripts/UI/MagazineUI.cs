@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -5,61 +6,253 @@ using UnityEngine.UI;
 public class MagazineUI : MonoBehaviour
 {
     [Header("UI Slots")]
-    // 에디터에서 5개의 Image 컴포넌트를 순서대로 넣어주세요.
     public List<Image> ballIconSlots = new List<Image>();
 
     [Header("Settings")]
-    public Color emptySlotColor = new Color(1, 1, 1, 0.2f); // 공이 나갔을 때의 투명도/색상
+    public Color emptySlotColor = new Color(1f, 1f, 1f, 0.2f);
     public Color activeSlotColor = Color.white;
+    [SerializeField] private Sprite emptyChamberSprite;
+
+    [Header("Cylinder Layout")]
+    [SerializeField] private float cylinderRadius = 24f;
+    [SerializeField] private float startAngle = 90f;
+
+    [Header("Fire Animation")]
+    [SerializeField] private float rotationDuration = 0.18f;
+    [SerializeField] private bool rotateClockwise = true;
+
+    private bool isSubscribed;
+    private float cylinderRotation;
+    private Coroutine rotationCoroutine;
+
+    private void Awake()
+    {
+        DisableLayoutGroup();
+        PrepareSlots();
+        ArrangeCylinder();
+        ClearAllSlots();
+    }
+
+    private void OnEnable()
+    {
+        SubscribeDeckEvents();
+        SyncWithCurrentMagazine();
+    }
 
     private void Start()
     {
-        // 시작 시 모든 슬롯을 비워둡니다.
-        ClearAllSlots();
+        SubscribeDeckEvents();
+        SyncWithCurrentMagazine();
     }
 
-    // 1. DeckManager의 onMagazineLoaded 이벤트에 연결할 함수
+    private void OnDisable()
+    {
+        UnsubscribeDeckEvents();
+    }
+
+    private void OnValidate()
+    {
+        PrepareSlots();
+        ArrangeCylinder();
+    }
+
     public void UpdateMagazineDisplay(List<BallData> magazine)
     {
-        ClearAllSlots();
-
-        for (int i = 0; i < magazine.Count; i++)
-        {
-            if (i < ballIconSlots.Count)
-            {
-                // 각 슬롯에 공의 Sprite를 할당하고 활성화합니다.
-                ballIconSlots[i].sprite = magazine[i].ballSprite;
-                ballIconSlots[i].color = activeSlotColor;
-                ballIconSlots[i].gameObject.SetActive(true);
-            }
-        }
+        cylinderRotation = 0f;
+        ApplyMagazineDisplay(magazine);
     }
 
-    // 2. 공을 하나 쏠 때마다 호출하여 맨 앞의 아이콘을 지우거나 흐리게 처리
     public void RefreshOnFire(int remainingCount)
     {
-        // 발사된 공의 인덱스(남은 개수 위치)를 비활성화하거나 투명하게 만듭니다.
-        // 예를 들어 5개 중 1개를 쏘면 4개가 남으므로, 4번 인덱스(기존의 마지막 공)가 아닌 
-        // 리스트 구조에 따라 순차적으로 시각적 피드백을 줍니다.
-        
-        // 여기서는 간단하게 뒤에서부터 지우는 것이 아니라, 
-        // 현재 남은 공의 개수보다 많은 인덱스의 슬롯들을 비활성화합니다.
-        for (int i = 0; i < ballIconSlots.Count; i++)
+        List<BallData> nextMagazine = DeckManager.Instance != null ? DeckManager.Instance.roundMagazine : null;
+
+        if (rotationCoroutine != null)
         {
-            if (i >= remainingCount)
-            {
-                ballIconSlots[i].color = emptySlotColor;
-                // 또는 아예 끄고 싶다면: ballIconSlots[i].gameObject.SetActive(false);
-            }
+            StopCoroutine(rotationCoroutine);
         }
+
+        rotationCoroutine = StartCoroutine(RotateOnFireRoutine(nextMagazine, remainingCount));
+    }
+
+    private IEnumerator RotateOnFireRoutine(List<BallData> nextMagazine, int remainingCount)
+    {
+        int slotCount = ballIconSlots.Count;
+        if (slotCount <= 0)
+        {
+            yield break;
+        }
+
+        float direction = rotateClockwise ? -1f : 1f;
+        float fromRotation = cylinderRotation;
+        float toRotation = cylinderRotation + (360f / slotCount * direction);
+        float elapsed = 0f;
+
+        while (elapsed < rotationDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = rotationDuration <= 0f ? 1f : Mathf.Clamp01(elapsed / rotationDuration);
+            float eased = Mathf.SmoothStep(0f, 1f, t);
+
+            cylinderRotation = Mathf.Lerp(fromRotation, toRotation, eased);
+            ArrangeCylinder();
+            yield return null;
+        }
+
+        cylinderRotation = toRotation;
+        ArrangeCylinder();
+
+        if (nextMagazine != null)
+        {
+            ApplyMagazineDisplay(nextMagazine);
+        }
+        else
+        {
+            ApplyFallbackRemainingDisplay(remainingCount);
+        }
+
+        rotationCoroutine = null;
     }
 
     private void ClearAllSlots()
     {
-        foreach (var slot in ballIconSlots)
+        foreach (Image slot in ballIconSlots)
         {
-            slot.sprite = null;
-            slot.color = emptySlotColor;
+            if (slot == null) continue;
+
+            SetEmptySlot(slot);
+        }
+    }
+
+    private void ApplyMagazineDisplay(List<BallData> magazine)
+    {
+        ArrangeCylinder();
+        ClearAllSlots();
+
+        if (magazine == null) return;
+
+        int displayCount = Mathf.Min(magazine.Count, ballIconSlots.Count);
+        for (int i = 0; i < displayCount; i++)
+        {
+            Image slot = ballIconSlots[i];
+            BallData ballData = magazine[i];
+            if (slot == null || ballData == null) continue;
+
+            slot.sprite = ballData.ballSprite;
+            slot.color = activeSlotColor;
+            slot.preserveAspect = true;
+            slot.gameObject.SetActive(true);
+        }
+    }
+
+    private void ApplyFallbackRemainingDisplay(int remainingCount)
+    {
+        for (int i = 0; i < ballIconSlots.Count; i++)
+        {
+            Image slot = ballIconSlots[i];
+            if (slot == null) continue;
+
+            if (i >= remainingCount)
+            {
+                SetEmptySlot(slot);
+            }
+            else
+            {
+                slot.color = activeSlotColor;
+            }
+        }
+    }
+
+    private void SetEmptySlot(Image slot)
+    {
+        slot.sprite = emptyChamberSprite;
+        slot.color = emptySlotColor;
+        slot.preserveAspect = true;
+        slot.gameObject.SetActive(true);
+    }
+
+    private void OnMagazineEmpty()
+    {
+        if (rotationCoroutine == null)
+        {
+            ClearAllSlots();
+        }
+    }
+
+    private void SubscribeDeckEvents()
+    {
+        if (isSubscribed || DeckManager.Instance == null) return;
+
+        DeckManager.Instance.onMagazineLoaded.AddListener(UpdateMagazineDisplay);
+        DeckManager.Instance.onBallFired.AddListener(RefreshOnFire);
+        DeckManager.Instance.onMagazineEmpty.AddListener(OnMagazineEmpty);
+        isSubscribed = true;
+    }
+
+    private void UnsubscribeDeckEvents()
+    {
+        if (!isSubscribed || DeckManager.Instance == null) return;
+
+        DeckManager.Instance.onMagazineLoaded.RemoveListener(UpdateMagazineDisplay);
+        DeckManager.Instance.onBallFired.RemoveListener(RefreshOnFire);
+        DeckManager.Instance.onMagazineEmpty.RemoveListener(OnMagazineEmpty);
+        isSubscribed = false;
+    }
+
+    private void SyncWithCurrentMagazine()
+    {
+        if (DeckManager.Instance != null && DeckManager.Instance.roundMagazine.Count > 0)
+        {
+            UpdateMagazineDisplay(DeckManager.Instance.roundMagazine);
+        }
+        else
+        {
+            ClearAllSlots();
+        }
+    }
+
+    private void PrepareSlots()
+    {
+        for (int i = 0; i < ballIconSlots.Count; i++)
+        {
+            Image slot = ballIconSlots[i];
+            if (slot == null) continue;
+
+            RectTransform rect = slot.rectTransform;
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+        }
+    }
+
+    private void ArrangeCylinder()
+    {
+        int slotCount = ballIconSlots.Count;
+        if (slotCount <= 0) return;
+
+        for (int i = 0; i < slotCount; i++)
+        {
+            Image slot = ballIconSlots[i];
+            if (slot == null) continue;
+
+            RectTransform rect = slot.rectTransform;
+            if (slotCount == 1)
+            {
+                rect.anchoredPosition = Vector2.zero;
+                continue;
+            }
+
+            float angle = startAngle + cylinderRotation - (360f / slotCount * i);
+            float radian = angle * Mathf.Deg2Rad;
+            rect.anchoredPosition = new Vector2(Mathf.Cos(radian), Mathf.Sin(radian)) * cylinderRadius;
+        }
+    }
+
+    private void DisableLayoutGroup()
+    {
+        LayoutGroup layoutGroup = GetComponent<LayoutGroup>();
+        if (layoutGroup != null)
+        {
+            layoutGroup.enabled = false;
         }
     }
 }
