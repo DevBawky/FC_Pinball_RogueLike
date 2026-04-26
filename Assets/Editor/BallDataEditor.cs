@@ -7,6 +7,7 @@ public class BallDataEditor : Editor
     private SerializedProperty ballNameProp;
     private SerializedProperty descriptionProp;
     private SerializedProperty ballSpriteProp;
+    private SerializedProperty effectColorProp;
     private SerializedProperty baseSpeedProp;
     private SerializedProperty maxHealthProp;
     private SerializedProperty scoreTypeProp;
@@ -19,6 +20,7 @@ public class BallDataEditor : Editor
         ballNameProp = serializedObject.FindProperty("ballName");
         descriptionProp = serializedObject.FindProperty("description");
         ballSpriteProp = serializedObject.FindProperty("ballSprite");
+        effectColorProp = serializedObject.FindProperty("effectColor");
         baseSpeedProp = serializedObject.FindProperty("baseSpeed");
         maxHealthProp = serializedObject.FindProperty("maxHealth");
         scoreTypeProp = serializedObject.FindProperty("scoreType");
@@ -34,6 +36,7 @@ public class BallDataEditor : Editor
         EditorGUILayout.PropertyField(ballNameProp);
         EditorGUILayout.PropertyField(descriptionProp);
         EditorGUILayout.PropertyField(ballSpriteProp);
+        EditorGUILayout.PropertyField(effectColorProp, new GUIContent("Color"));
 
         EditorGUILayout.Space(8f);
         EditorGUILayout.LabelField("Base Stats", EditorStyles.boldLabel);

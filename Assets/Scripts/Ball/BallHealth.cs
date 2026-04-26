@@ -11,6 +11,12 @@ public class BallHealth : MonoBehaviour
     [Header("Damage Settings")]
     public float damagePerBounce = 1f;
 
+    [Header("Effect Settings")]
+    [SerializeField] private GameObject boomEffectPrefab;
+    [SerializeField] private GameObject sparkEffectPrefab;
+    [SerializeField] private float effectDuration = 0.2f;
+    [SerializeField] private int initialEffectPoolSize = 6;
+
     [Header("Events")]
     public UnityEvent<float, float> onHealthChanged;
     public UnityEvent onTakeDamage;
@@ -18,11 +24,14 @@ public class BallHealth : MonoBehaviour
 
     int targetLayerIndex, wallLayerIndex;
     private BallController ballController;
+    private bool boomEffectPlayed;
 
     void Start()
     {
         currentHealth = maxHealth;
         ballController = GetComponent<BallController>();
+        EffectPoolManager.Prewarm(boomEffectPrefab, initialEffectPoolSize);
+        EffectPoolManager.Prewarm(sparkEffectPrefab, initialEffectPoolSize);
 
         // 게임 시작 시 "Object" 문자열에 해당하는 레이어 번호를 미리 찾아 캐싱해 둡니다.
         targetLayerIndex = LayerMask.NameToLayer("Object");
@@ -43,12 +52,20 @@ public class BallHealth : MonoBehaviour
             ? collision.GetContact(0).point
             : collision.transform.position;
 
-        if (collision.gameObject.layer == targetLayerIndex)
+        bool isObjectCollision = collision.gameObject.layer == targetLayerIndex;
+        bool isWallCollision = collision.gameObject.layer == wallLayerIndex;
+
+        if (!isWallCollision)
+        {
+            EffectPoolManager.Play(sparkEffectPrefab, hitPoint, effectDuration, GetEffectColor());
+        }
+
+        if (isObjectCollision)
         {
             TakeDamage(damagePerBounce);
             ballController?.TryTriggerSpecialAbility(BallSpecialAbilityCollisionType.Object, hitPoint, collision.gameObject);
         }
-        else if(collision.gameObject.layer == wallLayerIndex)
+        else if(isWallCollision)
         {
             float wallDamage = damagePerBounce / 2f;
             if (GameManager.Instance != null)
@@ -114,8 +131,32 @@ public class BallHealth : MonoBehaviour
     {
         // 파괴 이벤트 호출 (폭발 파티클 재생, 게임 오버/턴 종료 매니저 호출 등)
         onDeath.Invoke();
+        PlayBoomEffect();
 
         // 공 오브젝트 파괴
         Destroy(gameObject);
+    }
+
+    private void OnDestroy()
+    {
+        PlayBoomEffect();
+    }
+
+    private void PlayBoomEffect()
+    {
+        if (!Application.isPlaying || boomEffectPlayed)
+        {
+            return;
+        }
+
+        boomEffectPlayed = true;
+        EffectPoolManager.Play(boomEffectPrefab, transform.position, effectDuration, GetEffectColor());
+    }
+
+    private Color GetEffectColor()
+    {
+        return ballController != null && ballController.ballData != null
+            ? ballController.ballData.effectColor
+            : Color.white;
     }
 }

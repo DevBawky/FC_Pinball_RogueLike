@@ -198,6 +198,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 15
   damagePerBounce: 1
+  boomEffectPrefab: {fileID: 8059609718252065285, guid: 2ac7528468877b94c9aeafde0cd66b7b, type: 3}
+  sparkEffectPrefab: {fileID: 6405031645195923140, guid: 132240bb51911f140b5e741dd886b6b1, type: 3}
+  effectDuration: 0.2
+  initialEffectPoolSize: 6
   onHealthChanged:
     m_PersistentCalls:
       m_Calls: []

@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: Test Enemy 1
   m_EditorClassIdentifier: 
   enemyName: New Enemy
-  maxHealth: 3000
+  maxHealth: 500
   enemySprite: {fileID: 6937817954938267909, guid: 32b5800169b000d429e0dace6ba6cd28, type: 3}

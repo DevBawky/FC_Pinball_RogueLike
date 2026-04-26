@@ -15,8 +15,9 @@ MonoBehaviour:
   ballName: "\uC720\uB9AC \uACF5"
   description: "\uAC00\uC7A5 \uAE30\uBCF8\uC801\uC778 \uD615\uD0DC\uC758 \uACF5\uC785\uB2C8\uB2E4."
   ballSprite: {fileID: -6413862288078591969, guid: 8759e3982980a2640b204a60834566b4, type: 3}
+  effectColor: {r: 0.0047169924, g: 0.6274231, b: 1, a: 0.5529412}
   baseSpeed: 6
-  maxHealth: 100
+  maxHealth: 500
   scoreType: 1
   scoreValue: 0.35
   price: 3

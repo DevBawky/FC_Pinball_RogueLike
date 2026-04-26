@@ -247,7 +247,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: f1365078618b6784abbe339bf83749f5, type: 2}
   - {fileID: 11400000, guid: 7ddb1311405930c4eba5520f8f457615, type: 2}
   maxDeckSize: 15
-  ballsPerRound: 5
+  ballsPerRound: 10
   roundMagazine: []
   onMagazineLoaded:
     m_PersistentCalls:
@@ -5540,6 +5540,31 @@ MonoBehaviour:
   enemyPool:
   - {fileID: 11400000, guid: ee05b95c155149a45ba7ac5fe0ae277d, type: 2}
   - {fileID: 11400000, guid: f36a8856182d844429aa824b664d21b7, type: 2}
+  stageEnemyPools:
+  - stageNumber: 1
+    enemyPool:
+    - {fileID: 11400000, guid: ee05b95c155149a45ba7ac5fe0ae277d, type: 2}
+    bossEnemyData: {fileID: 0}
+  - stageNumber: 2
+    enemyPool:
+    - {fileID: 11400000, guid: ee05b95c155149a45ba7ac5fe0ae277d, type: 2}
+    bossEnemyData: {fileID: 0}
+  - stageNumber: 3
+    enemyPool:
+    - {fileID: 11400000, guid: ee05b95c155149a45ba7ac5fe0ae277d, type: 2}
+    - {fileID: 11400000, guid: f36a8856182d844429aa824b664d21b7, type: 2}
+    bossEnemyData: {fileID: 0}
+  - stageNumber: 4
+    enemyPool:
+    - {fileID: 11400000, guid: f36a8856182d844429aa824b664d21b7, type: 2}
+    bossEnemyData: {fileID: 0}
+  - stageNumber: 5
+    enemyPool:
+    - {fileID: 11400000, guid: f36a8856182d844429aa824b664d21b7, type: 2}
+    bossEnemyData: {fileID: 0}
+  - stageNumber: 6
+    enemyPool: []
+    bossEnemyData: {fileID: 11400000, guid: dde5dd71d79e1844e85132bbfa9f7334, type: 2}
   bossEnemyData: {fileID: 11400000, guid: dde5dd71d79e1844e85132bbfa9f7334, type: 2}
   enemySpriteRenderer: {fileID: 557585869}
   maxHealth: 300
@@ -5954,6 +5979,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1094623846}
   - component: {fileID: 1094623847}
+  - component: {fileID: 1094623848}
   m_Layer: 0
   m_Name: '@_ParticleManager'
   m_TagString: Untagged
@@ -5996,6 +6022,18 @@ MonoBehaviour:
   particleBaseDamage: 20
   particleSpeed: 4000
   spawnInterval: 0.02
+--- !u!114 &1094623848
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1094623845}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b63d48e586e43a1a34ec41f5249b6f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1100112104
 GameObject:
   m_ObjectHideFlags: 0
@@ -6109,11 +6147,11 @@ MonoBehaviour:
   - chipsBonus: 0
     multiplierBonus: 0
   - chipsBonus: 1
-    multiplierBonus: 0.1
+    multiplierBonus: 0.05
   - chipsBonus: 2
-    multiplierBonus: 0.2
+    multiplierBonus: 0.1
   - chipsBonus: 3
-    multiplierBonus: 0.3
+    multiplierBonus: 0.2
   scoreGainUpgradeCosts: 04000000070000000b000000
   deckDeleteBaseCost: 5
   deckDeleteCostIncrease: 3

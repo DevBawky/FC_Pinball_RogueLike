@@ -33,6 +33,7 @@ public class MainMenuUIManager : MonoBehaviour
     [SerializeField] float _progressLerpDuration = 0.5f;
 
     int _stagesCompleted = 0;
+    int _selectedStageNumber = 1;
     StageType _selectedStageType = StageType.Battle;
     Coroutine _progressCoroutine;
 
@@ -128,9 +129,11 @@ public class MainMenuUIManager : MonoBehaviour
     public void OnStageSelected(StageType type)
     {
         _selectedStageType = type;
+        _selectedStageNumber = Mathf.Max(1, _stagesCompleted + 1);
 
         if (type == StageType.BossBattle)
         {
+            _selectedStageNumber = Mathf.Max(1, _stagesBeforeBoss + 1);
             if (_progressCoroutine != null) StopCoroutine(_progressCoroutine);
             _progressCoroutine = StartCoroutine(AnimateProgressFill(
                 _progressFillImage != null ? _progressFillImage.fillAmount : 1f,
@@ -242,7 +245,7 @@ public class MainMenuUIManager : MonoBehaviour
     {
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.StartBattle(_selectedStageType);
+            GameManager.Instance.StartBattle(_selectedStageType, _selectedStageNumber);
         }
     }
 }

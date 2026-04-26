@@ -182,10 +182,20 @@ public class DamageParticleManager : MonoBehaviour
         // ★ 추가: 모든 대미지 파티클이 적에게 도착했다면 GameManager에게 턴 종료를 알립니다.
         if (activeParticles <= 0)
         {
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.PrepareNextAttack();
-            }
+            CompleteDamageSequence();
+        }
+    }
+
+    private void CompleteDamageSequence()
+    {
+        if (EnemyManager.Instance != null && EnemyManager.Instance.CurrentHealth <= 0f)
+        {
+            return;
+        }
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.PrepareNextAttack();
         }
     }
 }

@@ -4,6 +4,14 @@ using UnityEngine.UI;
 using TMPro;
 using UnityEngine.Tilemaps;
 
+[System.Serializable]
+public class StageEnemyPool
+{
+    [Min(1)] public int stageNumber = 1;
+    public EnemyData[] enemyPool;
+    public EnemyData bossEnemyData;
+}
+
 public class EnemyManager : MonoBehaviour
 {
     public static EnemyManager Instance;
@@ -11,6 +19,7 @@ public class EnemyManager : MonoBehaviour
     [Header("Enemy Data")]
     [SerializeField] private EnemyData currentEnemyData;
     [SerializeField] private EnemyData[] enemyPool;
+    [SerializeField] private StageEnemyPool[] stageEnemyPools;
     [SerializeField] private EnemyData bossEnemyData;
     [SerializeField] private Image enemySpriteRenderer;
 
@@ -174,33 +183,103 @@ public class EnemyManager : MonoBehaviour
 
     public void InitializeBattleEnemy(bool isBossBattle = false)
     {
-        EnemyData selectedEnemyData = isBossBattle ? GetBossEnemyData() : GetRandomEnemyData();
+        InitializeBattleEnemy(isBossBattle, 1);
+    }
+
+    public void InitializeBattleEnemy(bool isBossBattle, int stageNumber)
+    {
+        EnemyData selectedEnemyData = isBossBattle ? GetBossEnemyData(stageNumber) : GetRandomEnemyData(stageNumber);
         ApplyEnemyData(selectedEnemyData);
     }
 
-    private EnemyData GetRandomEnemyData()
+    private EnemyData GetRandomEnemyData(int stageNumber)
     {
-        if (enemyPool != null && enemyPool.Length > 0)
+        StageEnemyPool stageEnemyPool = GetStageEnemyPool(stageNumber);
+        EnemyData selectedEnemy = GetRandomEnemyFromPool(stageEnemyPool != null ? stageEnemyPool.enemyPool : null);
+        if (selectedEnemy != null)
         {
-            int randomIndex = Random.Range(0, enemyPool.Length);
-            if (enemyPool[randomIndex] != null)
+            return selectedEnemy;
+        }
+
+        selectedEnemy = GetRandomEnemyFromPool(enemyPool);
+        return selectedEnemy != null ? selectedEnemy : currentEnemyData;
+    }
+
+    private EnemyData GetRandomEnemyFromPool(EnemyData[] pool)
+    {
+        if (pool == null || pool.Length == 0)
+        {
+            return null;
+        }
+
+        int validCount = 0;
+        for (int i = 0; i < pool.Length; i++)
+        {
+            if (pool[i] != null)
             {
-                return enemyPool[randomIndex];
+                validCount++;
             }
         }
 
-        return currentEnemyData;
+        if (validCount <= 0)
+        {
+            return null;
+        }
+
+        int selectedIndex = Random.Range(0, validCount);
+        for (int i = 0; i < pool.Length; i++)
+        {
+            if (pool[i] == null)
+            {
+                continue;
+            }
+
+            if (selectedIndex == 0)
+            {
+                return pool[i];
+            }
+
+            selectedIndex--;
+        }
+
+        return null;
     }
 
-    private EnemyData GetBossEnemyData()
+    private EnemyData GetBossEnemyData(int stageNumber)
     {
+        StageEnemyPool stageEnemyPool = GetStageEnemyPool(stageNumber);
+        if (stageEnemyPool != null && stageEnemyPool.bossEnemyData != null)
+        {
+            return stageEnemyPool.bossEnemyData;
+        }
+
         if (bossEnemyData != null)
         {
             return bossEnemyData;
         }
 
         Debug.LogWarning("Boss enemy data is not assigned. Falling back to a normal enemy.");
-        return GetRandomEnemyData();
+        return GetRandomEnemyData(stageNumber);
+    }
+
+    private StageEnemyPool GetStageEnemyPool(int stageNumber)
+    {
+        if (stageEnemyPools == null || stageEnemyPools.Length == 0)
+        {
+            return null;
+        }
+
+        int clampedStageNumber = Mathf.Max(1, stageNumber);
+        for (int i = 0; i < stageEnemyPools.Length; i++)
+        {
+            StageEnemyPool stageEnemyPool = stageEnemyPools[i];
+            if (stageEnemyPool != null && stageEnemyPool.stageNumber == clampedStageNumber)
+            {
+                return stageEnemyPool;
+            }
+        }
+
+        return null;
     }
 
     public void ApplyEnemyData(EnemyData enemyData)

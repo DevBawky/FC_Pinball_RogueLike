@@ -23,6 +23,17 @@ public class MainGameUIManager : MonoBehaviour
 
     public void SpawnFlyingScore(Vector3 worldHitPosition, ScoreType type, float value)
     {
+        Transform targetPanel = (type == ScoreType.Chips) ? chipsTarget : multTarget;
+        if (flyingScorePrefab == null || mainCanvas == null || targetPanel == null)
+        {
+            if (ScoreManager.Instance != null)
+            {
+                ScoreManager.Instance.AddScore(type, value);
+            }
+
+            return;
+        }
+
         activeScoreParticles++; 
 
         Vector2 screenPosition = Camera.main.WorldToScreenPoint(worldHitPosition);
@@ -33,8 +44,18 @@ public class MainGameUIManager : MonoBehaviour
         if (flyingUI != null)
         {
             // 타입에 따라 타겟을 다르게 넘겨줍니다.
-            Transform targetPanel = (type == ScoreType.Chips) ? chipsTarget : multTarget;
             flyingUI.Initialize(targetPanel, type, value);
+        }
+        else
+        {
+            activeScoreParticles = Mathf.Max(0, activeScoreParticles - 1);
+
+            if (ScoreManager.Instance != null)
+            {
+                ScoreManager.Instance.AddScore(type, value);
+            }
+
+            Destroy(flyingObj);
         }
     }
 }

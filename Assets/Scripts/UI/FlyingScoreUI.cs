@@ -36,6 +36,12 @@ public class FlyingScoreUI : MonoBehaviour
 
     private IEnumerator FlyToTarget()
     {
+        if (targetTransform == null)
+        {
+            AddScoreAndDestroy();
+            yield break;
+        }
+
         Vector3 currentBasePosition = transform.position;
         float initialDistance = Vector3.Distance(currentBasePosition, targetTransform.position);
 
@@ -45,7 +51,7 @@ public class FlyingScoreUI : MonoBehaviour
             Vector3 direction = (targetTransform.position - currentBasePosition).normalized;
             Vector3 perpendicular = new Vector3(-direction.y, direction.x, 0f).normalized;
             float currentDistance = Vector3.Distance(currentBasePosition, targetTransform.position);
-            float distanceRatio = currentDistance / initialDistance; 
+            float distanceRatio = initialDistance > 0.001f ? currentDistance / initialDistance : 0f; 
             float waveOffset = Mathf.Sin((Time.time + randomTimeOffset) * waveFrequency) * (waveAmplitude * distanceRatio);
 
             transform.position = currentBasePosition + (perpendicular * waveOffset);
@@ -53,6 +59,11 @@ public class FlyingScoreUI : MonoBehaviour
         }
 
         // 목적지 도착 시 점수 올리기
+        AddScoreAndDestroy();
+    }
+
+    private void AddScoreAndDestroy()
+    {
         if (ScoreManager.Instance != null)
         {
             ScoreManager.Instance.AddScore(scoreType, scoreValue);

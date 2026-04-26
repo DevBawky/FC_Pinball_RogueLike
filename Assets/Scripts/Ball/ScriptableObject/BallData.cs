@@ -30,6 +30,7 @@ public class BallData : ScriptableObject
     [TextArea]
     public string description = "가장 기본적인 형태의 공입니다.";
     public Sprite ballSprite;
+    public Color effectColor = Color.white;
 
     [Header("이동 스탯")]
     public float baseSpeed = 15f;     

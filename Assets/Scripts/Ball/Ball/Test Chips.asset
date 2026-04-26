@@ -15,10 +15,12 @@ MonoBehaviour:
   ballName: Chips
   description: "\uAC00\uC7A5 \uAE30\uBCF8\uC801\uC778 \uD615\uD0DC\uC758 \uACF5\uC785\uB2C8\uB2E4."
   ballSprite: {fileID: 21300000, guid: 279df45cd02d6254bb7eb020f25ae50e, type: 3}
+  effectColor: {r: 1, g: 0.6084906, b: 0.691015, a: 1}
   baseSpeed: 6
-  maxHealth: 15
+  maxHealth: 18
   scoreType: 0
   scoreValue: 1
+  price: 3
   specialAbility:
     useSpecialAbility: 0
     abilityName: New Special Ability

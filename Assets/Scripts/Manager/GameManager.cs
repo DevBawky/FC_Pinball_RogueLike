@@ -73,6 +73,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private BattleCameraShake battleCameraShake;
     private Coroutine startBattleRoutine;
     private StageType currentBattleStageType = StageType.Battle;
+    private int currentBattleStageNumber = 1;
 
     void Awake()
     {
@@ -166,9 +167,15 @@ public class GameManager : MonoBehaviour
 
     public void StartBattle(StageType stageType)
     {
+        StartBattle(stageType, 1);
+    }
+
+    public void StartBattle(StageType stageType, int stageNumber)
+    {
         Debug.Log("--- 배틀 시작 ---");
 
         currentBattleStageType = stageType;
+        currentBattleStageNumber = Mathf.Max(1, stageNumber);
         currentPhase = GamePhase.Battle;
         isTurnActive = false;
         isSpawning = false;
@@ -254,7 +261,7 @@ public class GameManager : MonoBehaviour
 
         if (EnemyManager.Instance != null)
         {
-            EnemyManager.Instance.InitializeBattleEnemy(currentBattleStageType == StageType.BossBattle);
+            EnemyManager.Instance.InitializeBattleEnemy(currentBattleStageType == StageType.BossBattle, currentBattleStageNumber);
         }
 
         if (battleObjectSpawner != null)
