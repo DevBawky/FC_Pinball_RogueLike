@@ -16,7 +16,7 @@ MonoBehaviour:
   description: "\uAC00\uC7A5 \uAE30\uBCF8\uC801\uC778 \uD615\uD0DC\uC758 \uACF5\uC785\uB2C8\uB2E4."
   ballSprite: {fileID: 21300000, guid: f0a220000569d4f4083569f206778e1c, type: 3}
   effectColor: {r: 0, g: 0, b: 0, a: 1}
-  baseSpeed: 6
+  baseSpeed: 12
   maxHealth: 20
   scoreType: 0
   scoreValue: 1

@@ -29,11 +29,15 @@ public class ScoreManager : MonoBehaviour
     [SerializeField] private GameObject flameEffectMult;
     [SerializeField] private float flameFadeInDuration = 1f;
     [SerializeField] private float flameFadeOutDuration = 0.5f;
+    [SerializeField, Range(0f, 1f)] private float lethalEffectTargetAlpha = 0.5f;
+    [SerializeField] private string effectAlphaProperty = "_Alpha";
 
     private Coroutine flameFadeCoroutine;
     private float flameAlpha = 0f;
     private bool flameVisible = false;
     private bool suppressFlameEffects = false;
+    private Material chipsEffectMaterial;
+    private Material multEffectMaterial;
 
     void Awake()
     {
@@ -207,8 +211,8 @@ public class ScoreManager : MonoBehaviour
         if (suppressFlameEffects) return false;
         if (EnemyManager.Instance == null) return false;
 
-        float enemyHealth = EnemyManager.Instance.CurrentHealth;
-        return enemyHealth > 0f && CalculateTotalDamage() >= enemyHealth;
+        float enemyMaxHealth = EnemyManager.Instance.maxHealth;
+        return enemyMaxHealth > 0f && CalculateTotalDamage() >= enemyMaxHealth;
     }
 
     private IEnumerator FadeFlameEffects(float targetAlpha, float duration)
@@ -249,35 +253,68 @@ public class ScoreManager : MonoBehaviour
         if (effectRoot == null) return;
 
         effectRoot.SetActive(true);
+        float shaderAlpha = Mathf.Clamp01(alpha) * lethalEffectTargetAlpha;
 
         Graphic graphic = effectRoot.GetComponent<Graphic>();
         if (graphic != null)
         {
-            Color color = graphic.color;
-            color.a = alpha;
-            graphic.color = color;
+            Material material = GetRuntimeEffectMaterial(effectRoot, graphic);
+            SetMaterialAlpha(material, shaderAlpha);
             return;
         }
 
         SpriteRenderer spriteRenderer = effectRoot.GetComponent<SpriteRenderer>();
         if (spriteRenderer != null)
         {
-            Color color = spriteRenderer.color;
-            color.a = alpha;
-            spriteRenderer.color = color;
+            SetMaterialAlpha(spriteRenderer.material, shaderAlpha);
         }
+    }
+
+    private Material GetRuntimeEffectMaterial(GameObject effectRoot, Graphic graphic)
+    {
+        if (effectRoot == flameEffectChips)
+        {
+            if (chipsEffectMaterial == null && graphic.material != null)
+            {
+                chipsEffectMaterial = Instantiate(graphic.material);
+                graphic.material = chipsEffectMaterial;
+            }
+
+            return chipsEffectMaterial;
+        }
+
+        if (effectRoot == flameEffectMult)
+        {
+            if (multEffectMaterial == null && graphic.material != null)
+            {
+                multEffectMaterial = Instantiate(graphic.material);
+                graphic.material = multEffectMaterial;
+            }
+
+            return multEffectMaterial;
+        }
+
+        return graphic.material;
+    }
+
+    private void SetMaterialAlpha(Material material, float alpha)
+    {
+        if (material == null || string.IsNullOrEmpty(effectAlphaProperty)) return;
+        if (!material.HasProperty(effectAlphaProperty)) return;
+
+        material.SetFloat(effectAlphaProperty, Mathf.Clamp01(alpha));
     }
 
     private void ResolveFlameEffectReferences()
     {
         if (flameEffectChips == null)
         {
-            flameEffectChips = FindSceneObjectByName("FlameEffect_Chips");
+            flameEffectChips = FindSceneObjectByName("Effect_Chips");
         }
 
         if (flameEffectMult == null)
         {
-            flameEffectMult = FindSceneObjectByName("FlameEffect_Mult");
+            flameEffectMult = FindSceneObjectByName("Effect_Multiplier");
         }
     }
 

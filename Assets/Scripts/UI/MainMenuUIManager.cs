@@ -60,7 +60,7 @@ public class MainMenuUIManager : MonoBehaviour
         _EnemySelectPanel.SetActive(true);
         ResetProgress();
         GenerateStageSelectPanels();
-        MainGameUIManager.Instance.FloatingPanel.SetActive(true);
+        //MainGameUIManager.Instance.FloatingPanel.SetActive(true);
         // GameStart 버튼을 누르면 게임 매니저에게도 스테이지 선택(턴 시작)을 알립니다.
         if (GameManager.Instance != null)
         {

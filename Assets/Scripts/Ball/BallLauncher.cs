@@ -17,7 +17,7 @@ public class BallLauncher : MonoBehaviour
         {
             if (GameManager.Instance != null && GameManager.Instance.currentPhase != GameManager.GamePhase.Battle) return;
 
-            if (DeckManager.Instance == null || DeckManager.Instance.roundMagazine.Count == 0) return;
+            if (DeckManager.Instance == null || DeckManager.Instance.CurrentLoadedBall == null) return;
             if (GameManager.Instance != null && GameManager.Instance.isCalculating) return;
 
             Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);

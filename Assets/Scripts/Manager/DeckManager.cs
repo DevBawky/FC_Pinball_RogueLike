@@ -6,6 +6,7 @@ using UnityEngine.Events;
 public class DeckManager : MonoBehaviour
 {
     public static DeckManager Instance;
+    public const int CylinderCapacity = 5;
     public event Action DeckChanged;
 
     [Header("Deck Settings")]
@@ -13,20 +14,29 @@ public class DeckManager : MonoBehaviour
     [SerializeField] private int maxDeckSize = 15;
 
     [Header("Round Settings")]
-    public int ballsPerRound = 5;
+    [SerializeField, Min(1)] private int ballsPerRound = CylinderCapacity;
     public List<BallData> roundMagazine = new List<BallData>();
+    public BallData CurrentLoadedBall { get; private set; }
 
     [Header("Events")]
-    public UnityEvent<List<BallData>> onMagazineLoaded;
-    public UnityEvent<int> onBallFired;
-    public UnityEvent onMagazineEmpty;
+    public UnityEvent<List<BallData>> onMagazineLoaded = new UnityEvent<List<BallData>>();
+    public UnityEvent<int> onBallFired = new UnityEvent<int>();
+    public UnityEvent onMagazineEmpty = new UnityEvent();
 
     public int MaxDeckSize => maxDeckSize;
     public bool IsDeckFull => currentDeck.Count >= maxDeckSize;
+    public int BallsPerRound => Mathf.Min(ballsPerRound, CylinderCapacity);
+    public int RemainingMagazineCount => roundMagazine.Count;
 
     void Awake()
     {
         if (Instance == null) Instance = this;
+        ballsPerRound = BallsPerRound;
+    }
+
+    private void OnValidate()
+    {
+        ballsPerRound = Mathf.Clamp(ballsPerRound, 1, CylinderCapacity);
     }
 
     void Start()
@@ -37,12 +47,14 @@ public class DeckManager : MonoBehaviour
     public void InitializeRun()
     {
         roundMagazine.Clear();
+        CurrentLoadedBall = null;
     }
 
     public void StartRound()
     {
         roundMagazine.Clear();
         LoadRandomMagazine();
+        RefreshCurrentLoadedBall();
 
         onMagazineLoaded.Invoke(roundMagazine);
     }
@@ -50,8 +62,10 @@ public class DeckManager : MonoBehaviour
     public BallData FireNextBall()
     {
         if (roundMagazine.Count == 0) return null;
+
         BallData ballToFire = roundMagazine[0];
         roundMagazine.RemoveAt(0);
+        RefreshCurrentLoadedBall();
 
         onBallFired.Invoke(roundMagazine.Count);
 
@@ -104,11 +118,16 @@ public class DeckManager : MonoBehaviour
         List<BallData> shuffledDeck = new List<BallData>(currentDeck);
         ShuffleList(shuffledDeck);
 
-        int magazineCount = Mathf.Min(ballsPerRound, shuffledDeck.Count);
+        int magazineCount = Mathf.Min(BallsPerRound, shuffledDeck.Count);
         for (int i = 0; i < magazineCount; i++)
         {
             roundMagazine.Add(shuffledDeck[i]);
         }
+    }
+
+    private void RefreshCurrentLoadedBall()
+    {
+        CurrentLoadedBall = roundMagazine.Count > 0 ? roundMagazine[0] : null;
     }
 
     private void ShuffleList(List<BallData> list)

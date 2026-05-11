@@ -7,6 +7,7 @@ public class ShopUpgradePanelUI : MonoBehaviour
     [SerializeField] private ShopUpgradeType upgradeType;
     [SerializeField] private TMP_Text titleText;
     [SerializeField] private TMP_Text valueText;
+    [SerializeField] private TMP_Text levelText;
     [SerializeField] private TMP_Text costText;
     [SerializeField] private Button purchaseButton;
     [SerializeField] private TMP_Text purchaseButtonText;
@@ -45,6 +46,11 @@ public class ShopUpgradePanelUI : MonoBehaviour
         if (valueText != null)
         {
             valueText.text = GameManager.Instance.GetUpgradeDisplayText(upgradeType);
+        }
+
+        if (levelText != null)
+        {
+            levelText.text = GameManager.Instance.GetUpgradeLevel(upgradeType).ToString();
         }
 
         int upgradeCost = GameManager.Instance.GetUpgradeCost(upgradeType);

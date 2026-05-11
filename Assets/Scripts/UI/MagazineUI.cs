@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,6 +13,7 @@ public class MagazineUI : MonoBehaviour
     public Color emptySlotColor = new Color(1f, 1f, 1f, 0.2f);
     public Color activeSlotColor = Color.white;
     [SerializeField] private Sprite emptyChamberSprite;
+    [SerializeField] private TMP_Text leftBulletText;
 
     [Header("Cylinder Layout")]
     [SerializeField] private float cylinderRadius = 24f;
@@ -60,11 +62,13 @@ public class MagazineUI : MonoBehaviour
     {
         cylinderRotation = 0f;
         ApplyMagazineDisplay(magazine);
+        UpdateLeftBulletText(magazine != null ? magazine.Count : 0);
     }
 
     public void RefreshOnFire(int remainingCount)
     {
         List<BallData> nextMagazine = DeckManager.Instance != null ? DeckManager.Instance.roundMagazine : null;
+        UpdateLeftBulletText(remainingCount);
 
         if (rotationCoroutine != null)
         {
@@ -172,6 +176,8 @@ public class MagazineUI : MonoBehaviour
 
     private void OnMagazineEmpty()
     {
+        UpdateLeftBulletText(0);
+
         if (rotationCoroutine == null)
         {
             ClearAllSlots();
@@ -207,7 +213,17 @@ public class MagazineUI : MonoBehaviour
         else
         {
             ClearAllSlots();
+            UpdateLeftBulletText(0);
         }
+    }
+
+    private void UpdateLeftBulletText(int remainingCount)
+    {
+        if (leftBulletText == null) return;
+
+        int maxBulletCount = DeckManager.CylinderCapacity;
+        int clampedRemainingCount = Mathf.Clamp(remainingCount, 0, maxBulletCount);
+        leftBulletText.text = $"{clampedRemainingCount} / {maxBulletCount}";
     }
 
     private void PrepareSlots()

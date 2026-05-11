@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public class LifeCountUI : MonoBehaviour
@@ -8,8 +9,10 @@ public class LifeCountUI : MonoBehaviour
     [Header("Life UI")]
     public Transform lifeIconParent;
     public GameObject lifeIconPrefab;
+    [SerializeField] private TMP_Text currentLifeText;
 
     private readonly List<GameObject> lifeIcons = new List<GameObject>();
+    private int maxLifeCount;
 
     void Awake()
     {
@@ -18,7 +21,13 @@ public class LifeCountUI : MonoBehaviour
 
     public void Initialize(int maxLifeCount)
     {
+        this.maxLifeCount = maxLifeCount;
         Clear();
+
+        if (lifeIconParent == null || lifeIconPrefab == null)
+        {
+            return;
+        }
 
         for (int i = 0; i < maxLifeCount; i++)
         {
@@ -32,6 +41,11 @@ public class LifeCountUI : MonoBehaviour
         for (int i = 0; i < lifeIcons.Count; i++)
         {
             lifeIcons[i].SetActive(i < currentLifeCount);
+        }
+
+        if (currentLifeText != null)
+        {
+            currentLifeText.text = $"{currentLifeCount} / {maxLifeCount}";
         }
     }
 
