@@ -24,8 +24,10 @@ public class GameManager : MonoBehaviour
     public bool isTurnActive = false;
     public bool isSpawning = false;
     public bool isCalculating = false;
+    [SerializeField, Min(0.05f)] private float ballCountCheckInterval = 0.25f;
     [SerializeField, Min(0f)] private float scoreParticleWaitTimeout = 3f;
     private float scoreParticleWaitTimer = 0f;
+    private Coroutine ballCountMonitorRoutine;
 
     [Header("Battle Life")]
     public int maxLifeCount = 5;
@@ -89,20 +91,13 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
-        if (currentPhase == GamePhase.Battle && isTurnActive && !isSpawning && !isCalculating)
+        if (ballCountMonitorRoutine == null
+            && currentPhase == GamePhase.Battle
+            && isTurnActive
+            && !isSpawning
+            && !isCalculating)
         {
-            GameObject[] balls = GameObject.FindGameObjectsWithTag("Ball");
-
-            if (balls.Length == 0)
-            {
-                StopBattleCameraShake();
-
-                TryStartFinalDamageCalculation();
-            }
-            else
-            {
-                scoreParticleWaitTimer = 0f;
-            }
+            CheckForTurnCompletion(Time.deltaTime);
         }
     }
 
@@ -119,6 +114,7 @@ public class GameManager : MonoBehaviour
         }
 
         StartBattleCameraShake();
+        StartBallCountMonitor();
     }
 
     public void OnFireFinished()
@@ -149,6 +145,7 @@ public class GameManager : MonoBehaviour
         isSpawning = false;
         isCalculating = false;
         scoreParticleWaitTimer = 0f;
+        StopBallCountMonitor();
         StopBattleCameraShakeImmediately();
 
         currentPhase = GamePhase.PayOut;
@@ -181,6 +178,7 @@ public class GameManager : MonoBehaviour
         isSpawning = false;
         isCalculating = false;
         scoreParticleWaitTimer = 0f;
+        StopBallCountMonitor();
 
         currentLifeCount = maxLifeCount;
 
@@ -207,6 +205,7 @@ public class GameManager : MonoBehaviour
         isSpawning = false;
         isCalculating = false;
         scoreParticleWaitTimer = 0f;
+        StopBallCountMonitor();
         StopBattleCameraShakeImmediately();
         UpdatePanels();
 
@@ -285,6 +284,7 @@ public class GameManager : MonoBehaviour
             isSpawning = false;
             isCalculating = false;
             scoreParticleWaitTimer = 0f;
+            StopBallCountMonitor();
             StopBattleCameraShakeImmediately();
 
             if (currentLifeCount <= 0)
@@ -312,7 +312,65 @@ public class GameManager : MonoBehaviour
         return currentLifeCount;
     }
 
-    private void TryStartFinalDamageCalculation()
+    private IEnumerator BallCountMonitorRoutine()
+    {
+        WaitForSeconds wait = new WaitForSeconds(ballCountCheckInterval);
+
+        while (currentPhase == GamePhase.Battle && isTurnActive)
+        {
+            if (!isSpawning && !isCalculating)
+            {
+                CheckForTurnCompletion(ballCountCheckInterval);
+
+                if (isCalculating || !isTurnActive || currentPhase != GamePhase.Battle)
+                {
+                    break;
+                }
+            }
+
+            yield return wait;
+        }
+
+        ballCountMonitorRoutine = null;
+    }
+
+    private void StartBallCountMonitor()
+    {
+        StopBallCountMonitor();
+        ballCountMonitorRoutine = StartCoroutine(BallCountMonitorRoutine());
+    }
+
+    private void StopBallCountMonitor()
+    {
+        if (ballCountMonitorRoutine == null)
+        {
+            return;
+        }
+
+        StopCoroutine(ballCountMonitorRoutine);
+        ballCountMonitorRoutine = null;
+    }
+
+    private void CheckForTurnCompletion(float elapsedTime)
+    {
+        if (CountActiveBalls() == 0)
+        {
+            StopBattleCameraShake();
+            TryStartFinalDamageCalculation(elapsedTime);
+        }
+        else
+        {
+            scoreParticleWaitTimer = 0f;
+        }
+    }
+
+    private int CountActiveBalls()
+    {
+        BallController[] balls = FindObjectsByType<BallController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        return balls.Length;
+    }
+
+    private void TryStartFinalDamageCalculation(float elapsedTime)
     {
         int activeScoreParticles = MainGameUIManager.Instance != null
             ? MainGameUIManager.Instance.activeScoreParticles
@@ -320,7 +378,7 @@ public class GameManager : MonoBehaviour
 
         if (activeScoreParticles > 0)
         {
-            scoreParticleWaitTimer += Time.deltaTime;
+            scoreParticleWaitTimer += elapsedTime;
 
             if (scoreParticleWaitTimer < scoreParticleWaitTimeout)
             {
