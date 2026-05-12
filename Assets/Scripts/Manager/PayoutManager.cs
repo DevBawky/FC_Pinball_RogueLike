@@ -7,14 +7,10 @@ public class PayoutManager : MonoBehaviour
 {
     public static PayoutManager Instance;
 
-    [Header("Coin UI")]
-    public Transform remainingLifeCoinParent;
-    public Transform interestCoinParent;
-    public GameObject coinIconPrefab;
-
     [Header("Text")]
     public TMP_Text remainingLifeRewardText;
     public TMP_Text interestRewardText;
+    public TMP_Text totalRewardText;
     public TMP_Text payoutButtonText;
     public TMP_Text currentCoinText;
 
@@ -29,14 +25,18 @@ public class PayoutManager : MonoBehaviour
     private Coroutine payoutRoutine;
     private Coroutine coinCountRoutine;
 
-    private int pendingPayoutAmount = 0;
-    private bool isPayoutReady = false;
-    private bool isCoinListenerRegistered = false;
+    private int pendingPayoutAmount;
+    private bool isPayoutReady;
+    private bool isCoinListenerRegistered;
 
     void Awake()
     {
         if (Instance == null) Instance = this;
-        payoutButton.onClick.AddListener(OnClickPayoutButton);
+
+        if (payoutButton != null)
+        {
+            payoutButton.onClick.AddListener(OnClickPayoutButton);
+        }
     }
 
     void Start()
@@ -74,84 +74,62 @@ public class PayoutManager : MonoBehaviour
         isPayoutReady = false;
         pendingPayoutAmount = 0;
 
-        ClearCoinIcons();
-
         int remainingLifeReward = GameManager.Instance.GetRemainingLifeReward();
         int interestReward = GameManager.Instance.GetInterestReward();
         int totalReward = remainingLifeReward + interestReward;
 
         SetTextsToInitialState();
-        SetPayoutButtonInteractable(false);
+        SetPayoutButtonVisible(false);
 
-        int displayedTotal = 0;
-
-        float coinInterval = CalculateCoinInterval(totalReward);
-
-        yield return StartCoroutine(SpawnCoinSection(
-            remainingLifeCoinParent,
-            remainingLifeReward,
-            displayedTotal,
-            coinInterval,
-            value =>
-            {
-                displayedTotal = value;
-                UpdatePayoutButtonText(displayedTotal);
-            }
-        ));
-
+        yield return StartCoroutine(CountUpText(remainingLifeRewardText, remainingLifeReward, totalCoinAppearDuration));
         yield return new WaitForSeconds(sectionDelay);
 
-        yield return StartCoroutine(SpawnCoinSection(
-            interestCoinParent,
-            interestReward,
-            displayedTotal,
-            coinInterval,
-            value =>
-            {
-                displayedTotal = value;
-                UpdatePayoutButtonText(displayedTotal);
-            }
-        ));
+        yield return StartCoroutine(CountUpText(interestRewardText, interestReward, totalCoinAppearDuration));
+        yield return new WaitForSeconds(sectionDelay);
 
-        pendingPayoutAmount = displayedTotal;
+        yield return StartCoroutine(CountUpText(totalRewardText, totalReward, totalCoinAppearDuration));
+
+        pendingPayoutAmount = totalReward;
         isPayoutReady = true;
 
-        SetPayoutButtonInteractable(true);
+        UpdatePayoutButtonText();
+        SetPayoutButtonVisible(true);
 
         payoutRoutine = null;
     }
 
-    private float CalculateCoinInterval(int totalReward)
+    private IEnumerator CountUpText(TMP_Text targetText, int targetAmount, float duration)
     {
-        if (totalReward <= 0)
+        if (targetText == null)
         {
-            return 0f;
+            yield break;
         }
 
-        return totalCoinAppearDuration / totalReward;
-    }
-
-    private IEnumerator SpawnCoinSection(
-        Transform parent,
-        int amount,
-        int startTotal,
-        float coinInterval,
-        System.Action<int> onTotalChanged)
-    {
-        int total = startTotal;
-
-        for (int i = 0; i < amount; i++)
+        if (targetAmount <= 0 || duration <= 0f)
         {
-            Instantiate(coinIconPrefab, parent);
+            targetText.text = FormatRewardAmount(targetAmount);
+            yield break;
+        }
 
-            total++;
-            onTotalChanged?.Invoke(total);
+        float elapsed = 0f;
+        int previousValue = -1;
 
-            if (coinInterval > 0f)
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            int value = Mathf.RoundToInt(Mathf.Lerp(0, targetAmount, t));
+
+            if (value != previousValue)
             {
-                yield return new WaitForSeconds(coinInterval);
+                targetText.text = FormatRewardAmount(value);
+                previousValue = value;
             }
+
+            yield return null;
         }
+
+        targetText.text = FormatRewardAmount(targetAmount);
     }
 
     public void OnClickPayoutButton()
@@ -178,30 +156,41 @@ public class PayoutManager : MonoBehaviour
     {
         if (remainingLifeRewardText != null)
         {
-            remainingLifeRewardText.text = "Remaining Lives";
+            remainingLifeRewardText.text = FormatRewardAmount(0);
         }
 
         if (interestRewardText != null)
         {
-            interestRewardText.text = "Interest";
+            interestRewardText.text = FormatRewardAmount(0);
         }
 
-        if (payoutButtonText != null)
+        if (totalRewardText != null)
         {
-            payoutButtonText.text = "PAY OUT $0";
+            totalRewardText.text = FormatRewardAmount(0);
         }
 
-        if (currentCoinText != null)
+        UpdatePayoutButtonText();
+
+        if (currentCoinText != null && GameManager.Instance != null)
         {
             RefreshCoinText(GameManager.Instance.currentCoin);
         }
     }
 
-    private void UpdatePayoutButtonText(int amount)
+    private void UpdatePayoutButtonText()
     {
         if (payoutButtonText != null)
         {
-            payoutButtonText.text = $"PAY OUT ${amount}";
+            payoutButtonText.text = "PAY OUT";
+        }
+    }
+
+    private void SetPayoutButtonVisible(bool value)
+    {
+        if (payoutButton != null)
+        {
+            payoutButton.gameObject.SetActive(value);
+            payoutButton.interactable = value;
         }
     }
 
@@ -213,16 +202,9 @@ public class PayoutManager : MonoBehaviour
         }
     }
 
-    private void ClearCoinIcons()
-    {
-        ClearChildren(remainingLifeCoinParent);
-        ClearChildren(interestCoinParent);
-    }
-
     private IEnumerator CountUpCoinAndEnterShopRoutine()
     {
         int amountToAdd = pendingPayoutAmount;
-
         pendingPayoutAmount = 0;
 
         if (amountToAdd > 0)
@@ -246,14 +228,9 @@ public class PayoutManager : MonoBehaviour
         GameManager.Instance.EnterShop();
     }
 
-    private void ClearChildren(Transform parent)
+    private string FormatRewardAmount(int amount)
     {
-        if (parent == null) return;
-
-        for (int i = parent.childCount - 1; i >= 0; i--)
-        {
-            Destroy(parent.GetChild(i).gameObject);
-        }
+        return $"${amount}";
     }
 
     private void RefreshCoinText(int currentCoin)

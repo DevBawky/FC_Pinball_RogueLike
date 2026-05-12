@@ -196,8 +196,6 @@ public class MainMenuUIManager : MonoBehaviour
 
         if (_EnemySelectPanel != null)
         {
-            _EnemySelectPanel.GetComponent<Animator>().Play("GoMainGame");
-            yield return new WaitForSeconds(0.55f);
             _EnemySelectPanel.SetActive(false);
         }
 
@@ -219,13 +217,6 @@ public class MainMenuUIManager : MonoBehaviour
 
     IEnumerator End()
     {
-        if (_MainGamePanel != null)
-        {
-            _MainGamePanel.GetComponent<Animator>().Play("Battle_BeatEnemy");
-        }
-        
-        yield return new WaitForSeconds(2.2f);
-        
         if (EnemyManager.Instance != null)
         {
             EnemyManager.Instance.FadeMap();

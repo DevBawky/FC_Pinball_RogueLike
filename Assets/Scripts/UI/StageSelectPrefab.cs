@@ -28,6 +28,7 @@ public class StageSelectPrefab : MonoBehaviour
 {
     [Header("UI")]
     [SerializeField] Image _panelImage;
+    [SerializeField] Image _stageIconImage;
     [SerializeField] TMP_Text _roomTypeText;
     [SerializeField] TMP_Text _descriptionText;
     [SerializeField] Button _goStageButton;
@@ -39,6 +40,13 @@ public class StageSelectPrefab : MonoBehaviour
     [SerializeField] Sprite _shopSprite;
 
     [SerializeField] Sprite _bossSprite;
+
+    [Header("Type Icons")]
+    [SerializeField] Sprite _normalIconSprite;
+    [SerializeField] Sprite _treasureIconSprite;
+    [SerializeField] Sprite _eventIconSprite;
+    [SerializeField] Sprite _shopIconSprite;
+    [SerializeField] Sprite _bossIconSprite;
 
     public StageType CurrentStageType { get; private set; }
     public string StageDescription { get; private set; }
@@ -68,13 +76,20 @@ public class StageSelectPrefab : MonoBehaviour
 
         if (_panelImage != null)
         {
-            Sprite s = GetSpriteForType(CurrentStageType);
+            Sprite s = GetPanelSpriteForType(CurrentStageType);
             if (s != null)
                 _panelImage.sprite = s;
         }
+
+        if (_stageIconImage != null)
+        {
+            Sprite s = GetIconSpriteForType(CurrentStageType);
+            if (s != null)
+                _stageIconImage.sprite = s;
+        }
     }
 
-    Sprite GetSpriteForType(StageType type)
+    Sprite GetPanelSpriteForType(StageType type)
     {
         switch (type)
         {
@@ -83,6 +98,19 @@ public class StageSelectPrefab : MonoBehaviour
             case StageType.Event: return _eventSprite;
             case StageType.Shop: return _shopSprite;
             case StageType.BossBattle   : return _bossSprite;
+            default: return null;
+        }
+    }
+
+    Sprite GetIconSpriteForType(StageType type)
+    {
+        switch (type)
+        {
+            case StageType.Battle: return _normalIconSprite;
+            case StageType.Treasure: return _treasureIconSprite;
+            case StageType.Event: return _eventIconSprite;
+            case StageType.Shop: return _shopIconSprite;
+            case StageType.BossBattle: return _bossIconSprite;
             default: return null;
         }
     }
