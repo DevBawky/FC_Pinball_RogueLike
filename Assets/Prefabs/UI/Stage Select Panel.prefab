@@ -138,7 +138,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &7611442522359662429
 RectTransform:
   m_ObjectHideFlags: 0
@@ -540,7 +540,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -5180610484073813412, guid: 375e84a19b09415419c0affb8a8843dd, type: 3}
+  m_Sprite: {fileID: -6087145111136432132, guid: 4494a1bff5329ea4f91ad345ebdabb80, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -562,15 +562,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 906240358ec2328488f38e1d9b83b799, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _panelImage: {fileID: 5630673158645643793}
+  _panelImage: {fileID: 8364085752718984176}
   _roomTypeText: {fileID: 8159834885385661869}
   _descriptionText: {fileID: 6511321789227131241}
   _goStageButton: {fileID: 1904205381306737347}
-  _normalSprite: {fileID: 1345598292, guid: fb1baa2719696bb41bd7f138e7b0dcc2, type: 3}
-  _treasureSprite: {fileID: -2136333250, guid: fb1baa2719696bb41bd7f138e7b0dcc2, type: 3}
-  _eventSprite: {fileID: -1648826688, guid: fb1baa2719696bb41bd7f138e7b0dcc2, type: 3}
-  _shopSprite: {fileID: 883420785, guid: fb1baa2719696bb41bd7f138e7b0dcc2, type: 3}
-  _bossSprite: {fileID: -1695940581, guid: fb1baa2719696bb41bd7f138e7b0dcc2, type: 3}
+  _normalSprite: {fileID: -6087145111136432132, guid: 4494a1bff5329ea4f91ad345ebdabb80, type: 3}
+  _treasureSprite: {fileID: 850810456245385814, guid: 4494a1bff5329ea4f91ad345ebdabb80, type: 3}
+  _eventSprite: {fileID: 1071667594346908803, guid: 4494a1bff5329ea4f91ad345ebdabb80, type: 3}
+  _shopSprite: {fileID: 6571973182483461542, guid: 4494a1bff5329ea4f91ad345ebdabb80, type: 3}
+  _bossSprite: {fileID: 7789645867280137733, guid: 4494a1bff5329ea4f91ad345ebdabb80, type: 3}
 --- !u!1 &8242945021155070826
 GameObject:
   m_ObjectHideFlags: 0

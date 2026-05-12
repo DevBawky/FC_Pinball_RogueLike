@@ -46,9 +46,18 @@ public class StageSelectPrefab : MonoBehaviour
     public void Initialize(StageType type, string description = null)
     {
         CurrentStageType = type;
-        _roomTypeText.text = type.ToString();
+        if (_roomTypeText != null)
+            _roomTypeText.text = type.ToString();
+
         StageDescription = string.IsNullOrEmpty(description) ? GetDefaultDescription(type) : description;
-        _goStageButton.onClick.AddListener(onSelectStage);
+
+        if (_goStageButton != null)
+        {
+            _goStageButton.onClick.RemoveListener(onSelectStage);
+            _goStageButton.onClick.AddListener(onSelectStage);
+            _goStageButton.interactable = true;
+        }
+
         UpdateUI();
     }
 
