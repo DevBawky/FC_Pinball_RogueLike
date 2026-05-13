@@ -73,7 +73,15 @@ public class RussianRouletteCylinder : MonoBehaviour
 
     private void TriggerFail(BallMovement ball)
     {
-        Destroy(ball.gameObject);
+        BallHealth ballHealth = ball.GetComponent<BallHealth>();
+        if (ballHealth != null)
+        {
+            ballHealth.Kill();
+        }
+        else
+        {
+            GameObjectPoolManager.Release(ball.gameObject);
+        }
         
         Debug.Log("[탕!] 룰렛에 당첨되어 공이 파괴되었습니다.");
         

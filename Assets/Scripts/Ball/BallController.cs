@@ -150,7 +150,12 @@ public class BallController : MonoBehaviour
             spawnPosition += (Vector3)(initialDirection.normalized * spawnOffset);
         }
 
-        GameObject clone = Instantiate(gameObject, spawnPosition, transform.rotation);
+        GameObject clone = GameObjectPoolManager.SpawnFromInstance(gameObject, spawnPosition, transform.rotation);
+        if (clone == null)
+        {
+            return null;
+        }
+
         BallController cloneController = clone.GetComponent<BallController>();
 
         if (cloneController != null)

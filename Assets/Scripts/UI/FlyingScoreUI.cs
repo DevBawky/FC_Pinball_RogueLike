@@ -17,6 +17,8 @@ public class FlyingScoreUI : MonoBehaviour
     
     private ScoreType scoreType;
     private float scoreValue;
+    private Coroutine flyRoutine;
+    private bool isInitialized;
 
     [Header("Colors")]
     public Color chipsColor = Color.red;
@@ -29,9 +31,15 @@ public class FlyingScoreUI : MonoBehaviour
         targetTransform = target;
         scoreType = type;
         scoreValue = value;
+        isInitialized = true;
 
         randomTimeOffset = Random.Range(0f, Mathf.PI * 2f);
-        StartCoroutine(FlyToTarget());
+        if (flyRoutine != null)
+        {
+            StopCoroutine(flyRoutine);
+        }
+
+        flyRoutine = StartCoroutine(FlyToTarget());
     }
 
     private IEnumerator FlyToTarget()
@@ -69,15 +77,23 @@ public class FlyingScoreUI : MonoBehaviour
             ScoreManager.Instance.AddScore(scoreType, scoreValue);
         }
 
-        Destroy(gameObject);
+        GameObjectPoolManager.Release(gameObject);
     }
 
-    void OnDestroy()
+    void OnDisable()
     {
-        if (MainGameUIManager.Instance != null)
+        if (flyRoutine != null)
+        {
+            StopCoroutine(flyRoutine);
+            flyRoutine = null;
+        }
+
+        if (isInitialized && MainGameUIManager.Instance != null)
         {
             MainGameUIManager.Instance.activeScoreParticles =
                 Mathf.Max(0, MainGameUIManager.Instance.activeScoreParticles - 1);
         }
+
+        isInitialized = false;
     }
 }

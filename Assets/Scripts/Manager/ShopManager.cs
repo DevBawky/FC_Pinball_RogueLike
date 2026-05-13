@@ -58,6 +58,14 @@ public class ShopManager : MonoBehaviour
                 offerUI.Initialize(offeredBall, TryBuyBallOffer);
                 currentBallOfferUIs.Add(offerUI);
             }
+
+            DissolveRevealPanelUI revealUI = offerObject.GetComponent<DissolveRevealPanelUI>();
+            if (revealUI == null)
+            {
+                revealUI = offerObject.AddComponent<DissolveRevealPanelUI>();
+            }
+
+            revealUI.PlayReveal();
         }
     }
 

@@ -100,6 +100,7 @@ public class BallHealth : MonoBehaviour
 
     public void ResetHealth()
     {
+        boomEffectPlayed = false;
         currentHealth = maxHealth;
         onHealthChanged.Invoke(currentHealth, maxHealth);
     }
@@ -134,7 +135,19 @@ public class BallHealth : MonoBehaviour
         PlayBoomEffect();
 
         // 공 오브젝트 파괴
-        Destroy(gameObject);
+        GameObjectPoolManager.Release(gameObject);
+    }
+
+    public void Kill()
+    {
+        if (currentHealth <= 0f)
+        {
+            return;
+        }
+
+        currentHealth = 0f;
+        onHealthChanged.Invoke(currentHealth, maxHealth);
+        Die();
     }
 
     private void OnDestroy()

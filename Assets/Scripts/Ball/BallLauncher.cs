@@ -6,10 +6,16 @@ public class BallLauncher : MonoBehaviour
     [Header("발사 설정")]
     public GameObject ballPrefab;
     public float spawnDelay = 0.2f;
+    [SerializeField] private int initialBallPoolSize = 12;
 
     public LayerMask floorLayer;
 
     private bool isSpawningRoutineActive = false;
+
+    void Start()
+    {
+        GameObjectPoolManager.Prewarm(ballPrefab, initialBallPoolSize);
+    }
 
     void Update()
     {
@@ -71,7 +77,12 @@ public class BallLauncher : MonoBehaviour
                     break;
                 }
 
-                GameObject newBall = Instantiate(ballPrefab, spawnPosition, Quaternion.identity);
+                GameObject newBall = GameObjectPoolManager.Spawn(ballPrefab, spawnPosition, Quaternion.identity);
+                if (newBall == null)
+                {
+                    Debug.LogError("Failed to spawn a pooled ball.");
+                    break;
+                }
 
                 Vector2 randomDir = Random.insideUnitCircle.normalized;
                 if (randomDir == Vector2.zero) randomDir = Vector2.up;

@@ -8,6 +8,7 @@ public class MainGameUIManager : MonoBehaviour
     public Canvas mainCanvas;
     public GameObject flyingScorePrefab;   
     public GameObject FloatingPanel;
+    [SerializeField] private int initialFlyingScorePoolSize = 20;
 
     [Header("Targets (어디로 날아갈 것인가)")]
     public RectTransform chipsTarget; // 좌측 상단 붉은색 패널 중심
@@ -19,6 +20,11 @@ public class MainGameUIManager : MonoBehaviour
     void Awake()
     {
         if (Instance == null) Instance = this;
+    }
+
+    void Start()
+    {
+        GameObjectPoolManager.Prewarm(flyingScorePrefab, initialFlyingScorePoolSize);
     }
 
     public void SpawnFlyingScore(Vector3 worldHitPosition, ScoreType type, float value)
@@ -37,8 +43,18 @@ public class MainGameUIManager : MonoBehaviour
         activeScoreParticles++; 
 
         Vector2 screenPosition = Camera.main.WorldToScreenPoint(worldHitPosition);
-        GameObject flyingObj = Instantiate(flyingScorePrefab, mainCanvas.transform);
-        flyingObj.transform.position = screenPosition;
+        GameObject flyingObj = GameObjectPoolManager.Spawn(flyingScorePrefab, screenPosition, Quaternion.identity, mainCanvas.transform);
+        if (flyingObj == null)
+        {
+            activeScoreParticles = Mathf.Max(0, activeScoreParticles - 1);
+
+            if (ScoreManager.Instance != null)
+            {
+                ScoreManager.Instance.AddScore(type, value);
+            }
+
+            return;
+        }
 
         FlyingScoreUI flyingUI = flyingObj.GetComponent<FlyingScoreUI>();
         if (flyingUI != null)
@@ -55,7 +71,7 @@ public class MainGameUIManager : MonoBehaviour
                 ScoreManager.Instance.AddScore(type, value);
             }
 
-            Destroy(flyingObj);
+            GameObjectPoolManager.Release(flyingObj);
         }
     }
 }

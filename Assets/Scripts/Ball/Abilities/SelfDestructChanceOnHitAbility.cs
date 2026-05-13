@@ -19,6 +19,14 @@ public class SelfDestructChanceOnHitAbility : BallSpecialAbilityBase
             return;
         }
 
-        Destroy(context.ballController.gameObject);
+        BallHealth ballHealth = context.ballController.GetComponent<BallHealth>();
+        if (ballHealth != null)
+        {
+            ballHealth.Kill();
+        }
+        else
+        {
+            GameObjectPoolManager.Release(context.ballController.gameObject);
+        }
     }
 }
