@@ -1,22 +1,13 @@
 fileFormatVersion: 2
-guid: 93a0ec7ece54d6d4aa1ffd2738617d21
+guid: 06d6dd02e3ed01044961baad833defde
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 7432844144301801400
-    second: ShopPanel_0
+      213: -8933311323910036035
+    second: Panel_DeleteBall_0
   - first:
-      213: -548038576150251398
-    second: ShopPanel_1
-  - first:
-      213: 2467915620610164150
-    second: ShopPanel_2
-  - first:
-      213: 1855269311437407135
-    second: ShopPanel_3
-  - first:
-      213: -6633269947207418617
-    second: ShopPanel_4
+      213: 7770234455174968475
+    second: Panel_DeleteBall_1
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -125,89 +116,45 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: ShopPanel_0
+      name: Panel_DeleteBall_0
       rect:
         serializedVersion: 2
-        x: 112
-        y: 16
+        x: 8
+        y: 60
         width: 32
         height: 32
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 8bf73fb4e54c62760800000000000000
-      internalID: 7432844144301801400
+      spriteID: db52e5e7ea0860480800000000000000
+      internalID: -8933311323910036035
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ShopPanel_1
+      name: Panel_DeleteBall_1
       rect:
         serializedVersion: 2
-        x: 160
-        y: 33
-        width: 16
-        height: 14
+        x: 44
+        y: 3
+        width: 200
+        height: 121
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: a787a5191d9f468f0800000000000000
-      internalID: -548038576150251398
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: ShopPanel_2
-      rect:
-        serializedVersion: 2
-        x: 192
-        y: 31
-        width: 16
-        height: 17
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 6b54b1e6e2ccf3220800000000000000
-      internalID: 2467915620610164150
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: ShopPanel_3
-      rect:
-        serializedVersion: 2
-        x: 225
-        y: 31
-        width: 14
-        height: 17
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: f9309eeeb9d3fb910800000000000000
-      internalID: 1855269311437407135
+      spriteID: b94743a811b65db60800000000000000
+      internalID: 7770234455174968475
       vertices: []
       indices: 
       edges: []
@@ -216,7 +163,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 32d6d5c0ba2cf5f4b98505745d9268b3
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -224,14 +171,10 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries:
-      - key: SpriteEditor.SliceSettings
-        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":64.0,"y":64.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":0,"keepEmptyRects":false,"isAlternate":false}'
+      entries: []
     nameFileIdTable:
-      ShopPanel_0: 7432844144301801400
-      ShopPanel_1: -548038576150251398
-      ShopPanel_2: 2467915620610164150
-      ShopPanel_3: 1855269311437407135
+      Panel_DeleteBall_0: -8933311323910036035
+      Panel_DeleteBall_1: 7770234455174968475
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

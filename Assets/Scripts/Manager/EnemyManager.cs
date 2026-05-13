@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -62,8 +63,23 @@ public class EnemyManager : MonoBehaviour
     [Header("Fade On Death")]
     [Tooltip("Root transform whose children will be faded out on death. If null, this GameObject's transform will be used.")]
     public Transform fadeRoot;
-    [Tooltip("Duration in seconds for fading renderers to alpha=0.")]
+    [Tooltip("Duration in seconds for dissolving renderers out on death.")]
     public float fadeDurationOnDeath = 1f;
+
+    private static readonly int DissolveId = Shader.PropertyToID("_Dissolve");
+    private readonly List<MapDissolveTarget> activeMapDissolveTargets = new List<MapDissolveTarget>();
+    private Coroutine mapDissolveCoroutine;
+    private Shader mapDissolveShader;
+
+    private class MapDissolveTarget
+    {
+        public Renderer renderer;
+        public Material originalMaterial;
+        public Material runtimeMaterial;
+        public SpriteRenderer spriteRenderer;
+        public Tilemap tilemap;
+        public Color originalColor;
+    }
 
     void Update()
     {
@@ -316,77 +332,153 @@ public class EnemyManager : MonoBehaviour
         MainMenuUIManager.Instance.BeatEnemy();
     }
 
-    public void FadeMap() => StartCoroutine(FadeChildrenToTransparent(fadeRoot, fadeDurationOnDeath));
+    public void FadeMap()
+    {
+        if (mapDissolveCoroutine != null)
+        {
+            StopCoroutine(mapDissolveCoroutine);
+        }
+
+        mapDissolveCoroutine = StartCoroutine(DissolveChildrenOut(fadeRoot, fadeDurationOnDeath));
+    }
 
     public void RestoreStageVisuals()
     {
+        if (mapDissolveCoroutine != null)
+        {
+            StopCoroutine(mapDissolveCoroutine);
+            mapDissolveCoroutine = null;
+        }
+
+        RestoreMapDissolveMaterials();
         RestoreTilemaps();
         RestoreObjectLayerSpriteRenderers();
     }
 
-    private IEnumerator FadeChildrenToTransparent(Transform root, float duration)
+    private IEnumerator DissolveChildrenOut(Transform root, float duration)
     {
         if (root == null) yield break;
 
-        // Gather renderers/components to fade
+        RestoreMapDissolveMaterials();
+
+        if (mapDissolveShader == null)
+        {
+            mapDissolveShader = Resources.Load<Shader>("Shaders/SpriteTilemapDissolve");
+        }
+
+        if (mapDissolveShader == null)
+        {
+            mapDissolveShader = Shader.Find("Sprites/Tilemap Dissolve");
+        }
+
+        if (mapDissolveShader == null)
+        {
+            yield break;
+        }
+
         SpriteRenderer[] spriteRenderers = root.GetComponentsInChildren<SpriteRenderer>(true);
         Tilemap[] tilemaps = root.GetComponentsInChildren<Tilemap>(true);
 
-        Color[] spriteOriginal = new Color[spriteRenderers.Length];
-        for (int i = 0; i < spriteRenderers.Length; i++) spriteOriginal[i] = spriteRenderers[i].color;
+        for (int i = 0; i < spriteRenderers.Length; i++)
+        {
+            SpriteRenderer spriteRenderer = spriteRenderers[i];
+            if (spriteRenderer == null) continue;
 
-        // Read original colors from Tilemap components
-        Color[] tilemapOriginal = new Color[tilemaps.Length];
-        for (int i = 0; i < tilemaps.Length; i++) tilemapOriginal[i] = tilemaps[i].color;
+            AddMapDissolveTarget(spriteRenderer, spriteRenderer, null, spriteRenderer.color);
+        }
+
+        for (int i = 0; i < tilemaps.Length; i++)
+        {
+            Tilemap tilemap = tilemaps[i];
+            if (tilemap == null) continue;
+
+            TilemapRenderer tilemapRenderer = tilemap.GetComponent<TilemapRenderer>();
+            if (tilemapRenderer == null) continue;
+
+            AddMapDissolveTarget(tilemapRenderer, null, tilemap, tilemap.color);
+        }
 
         float elapsed = 0f;
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / duration);
-
-            // Lerp alpha for sprite renderers
-            for (int i = 0; i < spriteRenderers.Length; i++)
-            {
-                var sr = spriteRenderers[i];
-                if (sr == null) continue;
-                Color c = spriteOriginal[i];
-                c.a = Mathf.Lerp(spriteOriginal[i].a, 0f, t);
-                sr.color = c;
-            }
-
-            // Lerp alpha for Tilemap components
-            for (int i = 0; i < tilemaps.Length; i++)
-            {
-                var tm = tilemaps[i];
-                if (tm == null) continue;
-                Color orig = tilemapOriginal[i];
-                Color c = orig;
-                c.a = Mathf.Lerp(orig.a, 0f, t);
-                tm.color = c;
-            }
+            float t = Mathf.Clamp01(duration > 0f ? elapsed / duration : 1f);
+            float eased = t * t * (3f - 2f * t);
+            SetMapDissolve(eased);
 
             yield return null;
         }
 
-        // Ensure fully transparent at the end
-        for (int i = 0; i < spriteRenderers.Length; i++)
+        SetMapDissolve(1f);
+        mapDissolveCoroutine = null;
+    }
+
+    private void AddMapDissolveTarget(Renderer renderer, SpriteRenderer spriteRenderer, Tilemap tilemap, Color originalColor)
+    {
+        if (renderer == null || mapDissolveShader == null)
         {
-            var sr = spriteRenderers[i];
-            if (sr == null) continue;
-            Color c = sr.color;
-            c.a = 0f;
-            sr.color = c;
+            return;
         }
 
-        for (int i = 0; i < tilemaps.Length; i++)
+        Material runtimeMaterial = new Material(mapDissolveShader);
+        runtimeMaterial.name = "Runtime Map Dissolve";
+        runtimeMaterial.SetFloat(DissolveId, 0f);
+
+        MapDissolveTarget target = new MapDissolveTarget
         {
-            var tm = tilemaps[i];
-            if (tm == null) continue;
-            Color final = tilemapOriginal[i];
-            final.a = 0f;
-            tm.color = final;
+            renderer = renderer,
+            originalMaterial = renderer.sharedMaterial,
+            runtimeMaterial = runtimeMaterial,
+            spriteRenderer = spriteRenderer,
+            tilemap = tilemap,
+            originalColor = originalColor
+        };
+
+        renderer.material = runtimeMaterial;
+        activeMapDissolveTargets.Add(target);
+    }
+
+    private void SetMapDissolve(float dissolve)
+    {
+        for (int i = 0; i < activeMapDissolveTargets.Count; i++)
+        {
+            Material material = activeMapDissolveTargets[i].runtimeMaterial;
+            if (material != null)
+            {
+                material.SetFloat(DissolveId, dissolve);
+            }
         }
+    }
+
+    private void RestoreMapDissolveMaterials()
+    {
+        for (int i = 0; i < activeMapDissolveTargets.Count; i++)
+        {
+            MapDissolveTarget target = activeMapDissolveTargets[i];
+            if (target == null) continue;
+
+            if (target.renderer != null)
+            {
+                target.renderer.sharedMaterial = target.originalMaterial;
+            }
+
+            if (target.spriteRenderer != null)
+            {
+                target.spriteRenderer.color = target.originalColor;
+            }
+
+            if (target.tilemap != null)
+            {
+                target.tilemap.color = target.originalColor;
+            }
+
+            if (target.runtimeMaterial != null)
+            {
+                Destroy(target.runtimeMaterial);
+            }
+        }
+
+        activeMapDissolveTargets.Clear();
     }
 
     private void RestoreTilemaps()

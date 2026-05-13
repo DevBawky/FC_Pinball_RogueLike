@@ -128,8 +128,7 @@ public class ShopManager : MonoBehaviour
             return false;
         }
 
-        currentBallOfferUIs.Remove(offerUI);
-        Destroy(offerUI.gameObject);
+        offerUI.MarkPurchased();
         return true;
     }
 

@@ -47,17 +47,17 @@ public class MainMenuUIManager : MonoBehaviour
 
     void Start()
     {
-        if (_mainmenuPanel != null) _mainmenuPanel.SetActive(true);
-        if (_EnemySelectPanel != null) _EnemySelectPanel.SetActive(false);
-        if (_MainGamePanel != null) _MainGamePanel.SetActive(false);
+        DissolveRevealPanelUI.SetActiveWithDissolve(_mainmenuPanel, true);
+        DissolveRevealPanelUI.SetActiveWithDissolve(_EnemySelectPanel, false);
+        DissolveRevealPanelUI.SetActiveWithDissolve(_MainGamePanel, false);
 
         _gameStartButton.onClick.AddListener(onStartButtonPressed);
     }
 
     void onStartButtonPressed()
     {
-        _mainmenuPanel.SetActive(false);
-        _EnemySelectPanel.SetActive(true);
+        DissolveRevealPanelUI.SetActiveWithDissolve(_mainmenuPanel, false);
+        DissolveRevealPanelUI.SetActiveWithDissolve(_EnemySelectPanel, true);
         ResetProgress();
         GenerateStageSelectPanels();
         //MainGameUIManager.Instance.FloatingPanel.SetActive(true);
@@ -100,12 +100,12 @@ public class MainMenuUIManager : MonoBehaviour
     {
         if (_EnemySelectPanel != null)
         {
-            _EnemySelectPanel.SetActive(true);
+            DissolveRevealPanelUI.SetActiveWithDissolve(_EnemySelectPanel, true);
         }
 
         if (_MainGamePanel != null)
         {
-            _MainGamePanel.SetActive(false);
+            DissolveRevealPanelUI.SetActiveWithDissolve(_MainGamePanel, false);
         }
 
         if (_stageMap != null)
@@ -196,7 +196,7 @@ public class MainMenuUIManager : MonoBehaviour
 
         if (_EnemySelectPanel != null)
         {
-            _EnemySelectPanel.SetActive(false);
+            DissolveRevealPanelUI.SetActiveWithDissolve(_EnemySelectPanel, false);
         }
 
         // 맵(배경)은 UI 매니저가 켜줍니다.

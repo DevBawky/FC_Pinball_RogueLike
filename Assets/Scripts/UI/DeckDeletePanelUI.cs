@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class DeckDeletePanelUI : MonoBehaviour
 {
@@ -10,15 +12,29 @@ public class DeckDeletePanelUI : MonoBehaviour
     [SerializeField] private int slotsPerLayout = 5;
 
     private readonly List<ShopOwnedBallEntryUI> currentOwnedBallEntryUIs = new List<ShopOwnedBallEntryUI>();
+    private Coroutine refreshAfterEnableRoutine;
 
     void OnEnable()
     {
         RegisterListeners();
         RefreshDisplay();
+
+        if (refreshAfterEnableRoutine != null)
+        {
+            StopCoroutine(refreshAfterEnableRoutine);
+        }
+
+        refreshAfterEnableRoutine = StartCoroutine(RefreshAfterEnableRoutine());
     }
 
     void OnDisable()
     {
+        if (refreshAfterEnableRoutine != null)
+        {
+            StopCoroutine(refreshAfterEnableRoutine);
+            refreshAfterEnableRoutine = null;
+        }
+
         UnregisterListeners();
     }
 
@@ -64,6 +80,8 @@ public class DeckDeletePanelUI : MonoBehaviour
                 currentOwnedBallEntryUIs.Add(entryUI);
             }
         }
+
+        ForceRebuildOwnedDeckLayouts();
     }
 
     private bool TryDeleteOwnedBall(ShopOwnedBallEntryUI entryUI, BallData ownedBall)
@@ -144,6 +162,29 @@ public class DeckDeletePanelUI : MonoBehaviour
     private void OnDeckChanged()
     {
         RefreshDisplay();
+    }
+
+    private IEnumerator RefreshAfterEnableRoutine()
+    {
+        yield return null;
+
+        RegisterListeners();
+        RefreshDisplay();
+        refreshAfterEnableRoutine = null;
+    }
+
+    private void ForceRebuildOwnedDeckLayouts()
+    {
+        Canvas.ForceUpdateCanvases();
+
+        for (int i = 0; i < ownedDeckLayouts.Count; i++)
+        {
+            RectTransform layoutRect = ownedDeckLayouts[i] as RectTransform;
+            if (layoutRect != null)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(layoutRect);
+            }
+        }
     }
 
     private void ClearOwnedDeckDisplay()

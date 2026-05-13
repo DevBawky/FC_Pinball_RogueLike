@@ -67,6 +67,7 @@ public class GameManager : MonoBehaviour
     [Header("UI Panels")]
     public GameObject stageSelectionPanel;
     public GameObject mainGamePanel;
+    public GameObject playerPanel;
     public GameObject payoutPanel;
     public GameObject shopPanel;
 
@@ -237,10 +238,30 @@ public class GameManager : MonoBehaviour
 
     private void UpdatePanels()
     {
-        if (stageSelectionPanel != null) stageSelectionPanel.SetActive(currentPhase == GamePhase.StageSelection);
-        if (mainGamePanel != null) mainGamePanel.SetActive(currentPhase == GamePhase.Battle);
-        if (payoutPanel != null) payoutPanel.SetActive(currentPhase == GamePhase.PayOut);
-        if (shopPanel != null) shopPanel.SetActive(currentPhase == GamePhase.Shop || currentPhase == GamePhase.Maintenance);
+        DissolveRevealPanelUI.SetActiveWithDissolve(stageSelectionPanel, currentPhase == GamePhase.StageSelection);
+        DissolveRevealPanelUI.SetActiveWithDissolve(mainGamePanel, currentPhase == GamePhase.Battle);
+        UpdatePlayerPanel();
+        DissolveRevealPanelUI.SetActiveWithDissolve(payoutPanel, currentPhase == GamePhase.PayOut);
+        DissolveRevealPanelUI.SetActiveWithDissolve(shopPanel, currentPhase == GamePhase.Shop || currentPhase == GamePhase.Maintenance);
+    }
+
+    private void UpdatePlayerPanel()
+    {
+        if (playerPanel == null)
+        {
+            return;
+        }
+
+        if (currentPhase == GamePhase.MainMenu)
+        {
+            playerPanel.SetActive(false);
+            return;
+        }
+
+        if (!playerPanel.activeSelf)
+        {
+            DissolveRevealPanelUI.SetActiveWithDissolve(playerPanel, true);
+        }
     }
 
     private IEnumerator StartBattleRoutine()

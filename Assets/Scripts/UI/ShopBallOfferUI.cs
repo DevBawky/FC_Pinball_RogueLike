@@ -5,6 +5,7 @@ using UnityEngine.UI;
 
 public class ShopBallOfferUI : MonoBehaviour
 {
+    [SerializeField, Range(0f, 1f)] private float purchasedAlpha = 0.55f;
     [SerializeField] private TMP_Text ballNameText;
     [SerializeField] private TMP_Text descriptionText;
     [SerializeField] private TMP_Text priceText;
@@ -14,6 +15,8 @@ public class ShopBallOfferUI : MonoBehaviour
 
     private Func<ShopBallOfferUI, BallData, bool> purchaseCallback;
     private BallData ballData;
+    private CanvasGroup canvasGroup;
+    private bool isPurchased;
 
     void OnEnable()
     {
@@ -30,6 +33,9 @@ public class ShopBallOfferUI : MonoBehaviour
     {
         ballData = offeredBall;
         purchaseCallback = onPurchaseRequested;
+        isPurchased = false;
+        EnsureCanvasGroup();
+        SetVisualAlpha(1f);
 
         if (ballNameText != null)
         {
@@ -61,9 +67,26 @@ public class ShopBallOfferUI : MonoBehaviour
         RefreshInteractable();
     }
 
+    public void MarkPurchased()
+    {
+        isPurchased = true;
+
+        if (buyButton != null)
+        {
+            buyButton.interactable = false;
+        }
+
+        if (buyButtonText != null)
+        {
+            buyButtonText.text = "BOUGHT";
+        }
+
+        SetVisualAlpha(purchasedAlpha);
+    }
+
     private void OnClickBuyButton()
     {
-        if (purchaseCallback == null)
+        if (isPurchased || purchaseCallback == null)
         {
             return;
         }
@@ -78,9 +101,17 @@ public class ShopBallOfferUI : MonoBehaviour
             return;
         }
 
+        if (isPurchased)
+        {
+            buyButton.interactable = false;
+            SetVisualAlpha(purchasedAlpha);
+            return;
+        }
+
         bool canAfford = GameManager.Instance.currentCoin >= ballData.price;
         bool deckIsFull = DeckManager.Instance != null && DeckManager.Instance.IsDeckFull;
         buyButton.interactable = canAfford && !deckIsFull;
+        SetVisualAlpha(1f);
 
         if (buyButtonText != null)
         {
@@ -93,6 +124,25 @@ public class ShopBallOfferUI : MonoBehaviour
                 buyButtonText.text = canAfford ? "BUY" : "NEED MORE";
             }
         }
+    }
+
+    private void EnsureCanvasGroup()
+    {
+        if (canvasGroup == null)
+        {
+            canvasGroup = GetComponent<CanvasGroup>();
+        }
+
+        if (canvasGroup == null)
+        {
+            canvasGroup = gameObject.AddComponent<CanvasGroup>();
+        }
+    }
+
+    private void SetVisualAlpha(float alpha)
+    {
+        EnsureCanvasGroup();
+        canvasGroup.alpha = alpha;
     }
 
     private void RegisterListeners()
